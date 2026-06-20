@@ -127,7 +127,7 @@ blueprint:
           name: Notification Service (optional)
           description: >-
             Name of the notify service used to send the cycle summary.
-            Examples: notify.mobile_app_my_phone, notify.notify.
+            Examples: notify.mobile_app_my_phone, notify.notify
             Leave empty to only create a persistent HA notification.
           default: ""
           selector:
@@ -1078,7 +1078,9 @@ action:
   - alias: "Cycle complete — build summary message"
     variables:
       _summary_message: >-
-        📅 {{ now().strftime('%Y-%m-%d %H:%M') }} | 🌡 Forecast: {{ today_high_temp }}°C ({{ day_type | trim }} day) | 🌧 Rain: {{ today_precipitation }} mm
+        📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
+        🌡 Forecast: {{ today_high_temp }}°C ({{ day_type | trim }} day)
+        🌧 Rain: {{ today_precipitation }} mm
 
         Zone 1: {{ z1_result | trim }}
         {{ z1_moisture_line | trim }}

@@ -153,6 +153,7 @@ blueprint:
           description: >-
             The switch, valve, or input_boolean entity that opens the water
             valve for Zone 1.
+          default: ""
           selector:
             entity:
               domain:

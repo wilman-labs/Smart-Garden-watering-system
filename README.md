@@ -14,6 +14,7 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 | **Interval scheduling** | Waters every N days, tracked via `input_datetime` helpers |
 | **Soil moisture integration** | Optional per-zone sensors to skip or force watering |
 | **4 independent zones** | Each zone has its own valve, sensor, and settings |
+| **Post-cycle summary notification** | Sends a per-zone summary (moisture, duration, skip reason) after every cycle, and notifies immediately on rain-skip |
 
 ---
 
@@ -68,6 +69,7 @@ automation from this blueprint.
 | Cool Day Max Temp | 15 °C | High temp below this → use Cool durations |
 | Hot Day Min Temp | 28 °C | High temp at/above this → use Hot durations |
 | Watering Interval | 2 days | Days between watering runs |
+| Notification Service | *(empty)* | Optional notify service (e.g. `notify.mobile_app_my_phone`). If set, cycle-complete and rain-skip summaries are also sent via this service in addition to a persistent notification |
 
 ### Per-Zone Settings (repeated for Zones 1–4)
 

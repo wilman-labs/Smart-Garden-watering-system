@@ -620,7 +620,7 @@ action:
             data:
               title: "🌧 Garden Watering — Skipped (Rain)"
               notification_id: garden_watering_cycle
-              message: >-
+              message: |-
                 All zones skipped today.
 
                 🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm)
@@ -634,7 +634,7 @@ action:
                   - service: "{{ notify_target }}"
                     data:
                       title: "🌧 Garden Watering — Skipped (Rain)"
-                      message: >-
+                      message: |-
                         All zones skipped today.
                         🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
                         🌡 Forecast high: {{ today_high_temp }}°C
@@ -1078,7 +1078,7 @@ action:
 
   - alias: "Cycle complete — build summary message"
     variables:
-      _summary_message: >-
+      _summary_message: |-
         📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
         🌡 Forecast: {{ today_high_temp }}°C ({{ day_type | trim }} day)
         🌧 Rain: {{ today_precipitation }} mm

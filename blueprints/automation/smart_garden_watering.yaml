@@ -123,6 +123,16 @@ blueprint:
               unit_of_measurement: days
               mode: box
 
+        notify_target:
+          name: Notification Service (optional)
+          description: >-
+            Name of the notify service used to send the cycle summary.
+            Examples: notify.mobile_app_my_phone, notify.notify.
+            Leave empty to only create a persistent HA notification.
+          default: ""
+          selector:
+            text: {}
+
     # ── Zone 1 ─────────────────────────────────────────────────────
     zone_1:
       name: "Zone 1"
@@ -527,6 +537,7 @@ variables:
   temperature_cool_max: !input temperature_cool_max
   temperature_hot_min: !input temperature_hot_min
   watering_interval_days: !input watering_interval_days
+  notify_target: !input notify_target
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
   zone_1_valve: !input zone_1_valve
@@ -598,8 +609,35 @@ action:
 
   # ── 3. Abort if too much rain is forecast ────────────────────────
   - alias: "Skip all watering — rain threshold exceeded"
-    condition: template
-    value_template: "{{ not rain_skip }}"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ rain_skip }}"
+        sequence:
+          - alias: "Notify — rain skip"
+            service: persistent_notification.create
+            data:
+              title: "🌧 Garden Watering — Skipped (Rain)"
+              notification_id: garden_watering_cycle
+              message: >-
+                All zones skipped today.
+
+                🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm)
+                🌡 Forecast high: {{ today_high_temp }}°C
+          - alias: "Notify — rain skip (custom service)"
+            choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ notify_target != '' }}"
+                sequence:
+                  - service: "{{ notify_target }}"
+                    data:
+                      title: "🌧 Garden Watering — Skipped (Rain)"
+                      message: >-
+                        All zones skipped today.
+                        🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
+                        🌡 Forecast high: {{ today_high_temp }}°C
+          - stop: "Rain threshold exceeded — all watering skipped"
 
   # ════════════════════════════════════════════════════════════════
   # ZONE 1
@@ -679,6 +717,36 @@ action:
                     data:
                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 
+  - alias: "Zone 1 — capture result"
+    variables:
+      z1_moisture_end: >-
+        {% if zone_1_moisture_sensor != '' and
+              states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_1_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z1_result: >-
+        {% if not (zone_1_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_1_valve == '' %}
+          ⏭ No valve configured
+        {% elif z1_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z1_moisture_val | round(1) }}% > {{ zone_1_moisture_skip_threshold }}%)
+        {% elif not (z1_interval_due | bool(false)) and not (z1_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z1_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z1_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z1_moisture_line: >-
+        {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+          Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+        {% elif zone_1_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
+
   # ════════════════════════════════════════════════════════════════
   # ZONE 2
   # ════════════════════════════════════════════════════════════════
@@ -756,6 +824,36 @@ action:
                       entity_id: "{{ zone_2_last_watered }}"
                     data:
                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+  - alias: "Zone 2 — capture result"
+    variables:
+      z2_moisture_end: >-
+        {% if zone_2_moisture_sensor != '' and
+              states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_2_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z2_result: >-
+        {% if not (zone_2_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_2_valve == '' %}
+          ⏭ No valve configured
+        {% elif z2_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z2_moisture_val | round(1) }}% > {{ zone_2_moisture_skip_threshold }}%)
+        {% elif not (z2_interval_due | bool(false)) and not (z2_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z2_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z2_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z2_moisture_line: >-
+        {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+          Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+        {% elif zone_2_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
 
   # ════════════════════════════════════════════════════════════════
   # ZONE 3
@@ -835,6 +933,36 @@ action:
                     data:
                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 
+  - alias: "Zone 3 — capture result"
+    variables:
+      z3_moisture_end: >-
+        {% if zone_3_moisture_sensor != '' and
+              states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_3_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z3_result: >-
+        {% if not (zone_3_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_3_valve == '' %}
+          ⏭ No valve configured
+        {% elif z3_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z3_moisture_val | round(1) }}% > {{ zone_3_moisture_skip_threshold }}%)
+        {% elif not (z3_interval_due | bool(false)) and not (z3_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z3_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z3_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z3_moisture_line: >-
+        {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+          Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+        {% elif zone_3_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
+
   # ════════════════════════════════════════════════════════════════
   # ZONE 4
   # ════════════════════════════════════════════════════════════════
@@ -912,3 +1040,72 @@ action:
                       entity_id: "{{ zone_4_last_watered }}"
                     data:
                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+  - alias: "Zone 4 — capture result"
+    variables:
+      z4_moisture_end: >-
+        {% if zone_4_moisture_sensor != '' and
+              states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_4_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z4_result: >-
+        {% if not (zone_4_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_4_valve == '' %}
+          ⏭ No valve configured
+        {% elif z4_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z4_moisture_val | round(1) }}% > {{ zone_4_moisture_skip_threshold }}%)
+        {% elif not (z4_interval_due | bool(false)) and not (z4_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z4_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z4_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z4_moisture_line: >-
+        {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+          Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+        {% elif zone_4_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
+
+  # ════════════════════════════════════════════════════════════════
+  # CYCLE COMPLETE — SEND SUMMARY NOTIFICATION
+  # ════════════════════════════════════════════════════════════════
+
+  - alias: "Cycle complete — build summary message"
+    variables:
+      _summary_message: >-
+        📅 {{ now().strftime('%Y-%m-%d %H:%M') }} | 🌡 Forecast: {{ today_high_temp }}°C ({{ day_type | trim }} day) | 🌧 Rain: {{ today_precipitation }} mm
+
+        Zone 1: {{ z1_result | trim }}
+        {{ z1_moisture_line | trim }}
+
+        Zone 2: {{ z2_result | trim }}
+        {{ z2_moisture_line | trim }}
+
+        Zone 3: {{ z3_result | trim }}
+        {{ z3_moisture_line | trim }}
+
+        Zone 4: {{ z4_result | trim }}
+        {{ z4_moisture_line | trim }}
+
+  - alias: "Cycle complete — persistent notification"
+    service: persistent_notification.create
+    data:
+      title: "🌱 Garden Watering — Cycle Complete"
+      notification_id: garden_watering_cycle
+      message: "{{ _summary_message }}"
+
+  - alias: "Cycle complete — custom notify service"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notify_target != '' }}"
+        sequence:
+          - service: "{{ notify_target }}"
+            data:
+              title: "🌱 Garden Watering — Cycle Complete"
+              message: "{{ _summary_message }}"

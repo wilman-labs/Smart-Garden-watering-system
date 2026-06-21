@@ -21,6 +21,10 @@ blueprint:
 
     - 4 independent zones — each with its own valve, sensor, durations, and thresholds
 
+    - **Parallel or Sequential** zone execution — run all zones simultaneously or one at a time
+
+    - **Multi-target notifications** — send cycle summaries to up to three notification services
+
 
     **Pre-requisites**
 
@@ -47,6 +51,23 @@ blueprint:
       icon: mdi:cog-outline
       description: Scheduling, weather thresholds, and temperature classification.
       input:
+
+        run_mode:
+          name: Zone Run Mode
+          description: >-
+            Choose how zones are executed when multiple are due.
+            **Sequential** runs zones one after another (safe for single water supply lines
+            that cannot handle multiple valves open simultaneously).
+            **Parallel** opens all due zones at the same time and each closes independently
+            when its own duration expires — total watering time equals the longest zone.
+          default: "sequential"
+          selector:
+            select:
+              options:
+                - label: "Sequential (one zone at a time)"
+                  value: "sequential"
+                - label: "Parallel (all zones simultaneously)"
+                  value: "parallel"
 
         sunrise_offset:
           name: Offset After Sunrise
@@ -123,12 +144,41 @@ blueprint:
               unit_of_measurement: days
               mode: box
 
+    # ── Notifications ───────────────────────────────────────────────
+    notifications:
+      name: Notifications
+      icon: mdi:bell-outline
+      description: >-
+        Configure which notification services receive cycle summaries.
+        A persistent Home Assistant notification is always created.
+        Add up to three external notification targets (e.g. mobile apps, Slack, etc.).
+      input:
+
         notify_target:
-          name: Notification Service (optional)
+          name: "Notification Target 1 (optional)"
           description: >-
-            Name of the notify service used to send the cycle summary.
+            First notify service to call with the cycle summary.
             Examples: notify.mobile_app_my_phone, notify.notify
             Leave empty to only create a persistent HA notification.
+          default: ""
+          selector:
+            text: {}
+
+        notify_target_2:
+          name: "Notification Target 2 (optional)"
+          description: >-
+            Second notify service for an additional recipient
+            (e.g. a different phone, a Slack channel).
+            Leave empty to skip.
+          default: ""
+          selector:
+            text: {}
+
+        notify_target_3:
+          name: "Notification Target 3 (optional)"
+          description: >-
+            Third notify service for a third recipient.
+            Leave empty to skip.
           default: ""
           selector:
             text: {}
@@ -533,12 +583,15 @@ max_exceeded: silent
 # Resolve all blueprint inputs into named variables so they can be
 # referenced cleanly inside action templates.
 variables:
+  run_mode: !input run_mode
   weather_entity: !input weather_entity
   rain_threshold: !input rain_threshold
   temperature_cool_max: !input temperature_cool_max
   temperature_hot_min: !input temperature_hot_min
   watering_interval_days: !input watering_interval_days
   notify_target: !input notify_target
+  notify_target_2: !input notify_target_2
+  notify_target_3: !input notify_target_3
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
   zone_1_valve: !input zone_1_valve
@@ -638,6 +691,32 @@ action:
                         All zones skipped today.
                         🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
                         🌡 Forecast high: {{ today_high_temp }}°C
+          - alias: "Notify — rain skip (notify target 2)"
+            choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ notify_target_2 != '' }}"
+                sequence:
+                  - service: "{{ notify_target_2 }}"
+                    data:
+                      title: "🌧 Garden Watering — Skipped (Rain)"
+                      message: |-
+                        All zones skipped today.
+                        🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
+                        🌡 Forecast high: {{ today_high_temp }}°C
+          - alias: "Notify — rain skip (notify target 3)"
+            choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ notify_target_3 != '' }}"
+                sequence:
+                  - service: "{{ notify_target_3 }}"
+                    data:
+                      title: "🌧 Garden Watering — Skipped (Rain)"
+                      message: |-
+                        All zones skipped today.
+                        🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
+                        🌡 Forecast high: {{ today_high_temp }}°C
           - stop: "Rain threshold exceeded — all watering skipped"
 
   # ════════════════════════════════════════════════════════════════
@@ -688,45 +767,6 @@ action:
            and (zone_1_valve != '')
            and ((z1_interval_due | bool(false)) or (z1_force_water | bool(false)))
            and not (z1_skip_moisture | bool(false)) }}
-
-  - alias: "Zone 1 — water if due"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ z1_should_water }}"
-        sequence:
-          - alias: "Zone 1 — open valve"
-            service: homeassistant.turn_on
-            target:
-              entity_id: "{{ zone_1_valve }}"
-          - alias: "Zone 1 — wait"
-            delay:
-              seconds: "{{ z1_duration }}"
-          - alias: "Zone 1 — close valve"
-            service: homeassistant.turn_off
-            target:
-              entity_id: "{{ zone_1_valve }}"
-          - alias: "Zone 1 — record last watered"
-            choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ zone_1_last_watered != '' }}"
-                sequence:
-                  - service: input_datetime.set_datetime
-                    target:
-                      entity_id: "{{ zone_1_last_watered }}"
-                    data:
-                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-
-  - alias: "Zone 1 — capture result"
-    variables:
-      z1_moisture_end: >-
-        {% if zone_1_moisture_sensor != '' and
-              states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
-          {{ states(zone_1_moisture_sensor) | float(-1) }}
-        {% else %}
-          -1
-        {% endif %}
       z1_result: >-
         {% if not (zone_1_enabled | bool(false)) %}
           ⏭ Disabled
@@ -741,7 +781,7 @@ action:
         {% endif %}
       z1_moisture_line: >-
         {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+          Soil: {{ z1_moisture_val | round(1) }}%
         {% elif zone_1_moisture_sensor != '' %}
           Soil: sensor unavailable
         {% else %}
@@ -796,45 +836,6 @@ action:
            and (zone_2_valve != '')
            and ((z2_interval_due | bool(false)) or (z2_force_water | bool(false)))
            and not (z2_skip_moisture | bool(false)) }}
-
-  - alias: "Zone 2 — water if due"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ z2_should_water }}"
-        sequence:
-          - alias: "Zone 2 — open valve"
-            service: homeassistant.turn_on
-            target:
-              entity_id: "{{ zone_2_valve }}"
-          - alias: "Zone 2 — wait"
-            delay:
-              seconds: "{{ z2_duration }}"
-          - alias: "Zone 2 — close valve"
-            service: homeassistant.turn_off
-            target:
-              entity_id: "{{ zone_2_valve }}"
-          - alias: "Zone 2 — record last watered"
-            choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ zone_2_last_watered != '' }}"
-                sequence:
-                  - service: input_datetime.set_datetime
-                    target:
-                      entity_id: "{{ zone_2_last_watered }}"
-                    data:
-                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-
-  - alias: "Zone 2 — capture result"
-    variables:
-      z2_moisture_end: >-
-        {% if zone_2_moisture_sensor != '' and
-              states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
-          {{ states(zone_2_moisture_sensor) | float(-1) }}
-        {% else %}
-          -1
-        {% endif %}
       z2_result: >-
         {% if not (zone_2_enabled | bool(false)) %}
           ⏭ Disabled
@@ -849,7 +850,7 @@ action:
         {% endif %}
       z2_moisture_line: >-
         {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+          Soil: {{ z2_moisture_val | round(1) }}%
         {% elif zone_2_moisture_sensor != '' %}
           Soil: sensor unavailable
         {% else %}
@@ -904,45 +905,6 @@ action:
            and (zone_3_valve != '')
            and ((z3_interval_due | bool(false)) or (z3_force_water | bool(false)))
            and not (z3_skip_moisture | bool(false)) }}
-
-  - alias: "Zone 3 — water if due"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ z3_should_water }}"
-        sequence:
-          - alias: "Zone 3 — open valve"
-            service: homeassistant.turn_on
-            target:
-              entity_id: "{{ zone_3_valve }}"
-          - alias: "Zone 3 — wait"
-            delay:
-              seconds: "{{ z3_duration }}"
-          - alias: "Zone 3 — close valve"
-            service: homeassistant.turn_off
-            target:
-              entity_id: "{{ zone_3_valve }}"
-          - alias: "Zone 3 — record last watered"
-            choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ zone_3_last_watered != '' }}"
-                sequence:
-                  - service: input_datetime.set_datetime
-                    target:
-                      entity_id: "{{ zone_3_last_watered }}"
-                    data:
-                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-
-  - alias: "Zone 3 — capture result"
-    variables:
-      z3_moisture_end: >-
-        {% if zone_3_moisture_sensor != '' and
-              states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
-          {{ states(zone_3_moisture_sensor) | float(-1) }}
-        {% else %}
-          -1
-        {% endif %}
       z3_result: >-
         {% if not (zone_3_enabled | bool(false)) %}
           ⏭ Disabled
@@ -957,7 +919,7 @@ action:
         {% endif %}
       z3_moisture_line: >-
         {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+          Soil: {{ z3_moisture_val | round(1) }}%
         {% elif zone_3_moisture_sensor != '' %}
           Soil: sensor unavailable
         {% else %}
@@ -1012,45 +974,6 @@ action:
            and (zone_4_valve != '')
            and ((z4_interval_due | bool(false)) or (z4_force_water | bool(false)))
            and not (z4_skip_moisture | bool(false)) }}
-
-  - alias: "Zone 4 — water if due"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ z4_should_water }}"
-        sequence:
-          - alias: "Zone 4 — open valve"
-            service: homeassistant.turn_on
-            target:
-              entity_id: "{{ zone_4_valve }}"
-          - alias: "Zone 4 — wait"
-            delay:
-              seconds: "{{ z4_duration }}"
-          - alias: "Zone 4 — close valve"
-            service: homeassistant.turn_off
-            target:
-              entity_id: "{{ zone_4_valve }}"
-          - alias: "Zone 4 — record last watered"
-            choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ zone_4_last_watered != '' }}"
-                sequence:
-                  - service: input_datetime.set_datetime
-                    target:
-                      entity_id: "{{ zone_4_last_watered }}"
-                    data:
-                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
-
-  - alias: "Zone 4 — capture result"
-    variables:
-      z4_moisture_end: >-
-        {% if zone_4_moisture_sensor != '' and
-              states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
-          {{ states(zone_4_moisture_sensor) | float(-1) }}
-        {% else %}
-          -1
-        {% endif %}
       z4_result: >-
         {% if not (zone_4_enabled | bool(false)) %}
           ⏭ Disabled
@@ -1065,12 +988,387 @@ action:
         {% endif %}
       z4_moisture_line: >-
         {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+          Soil: {{ z4_moisture_val | round(1) }}%
         {% elif zone_4_moisture_sensor != '' %}
           Soil: sensor unavailable
         {% else %}
           Soil: no sensor
         {% endif %}
+
+  # ════════════════════════════════════════════════════════════════
+  # EXECUTE ZONES — SEQUENTIAL OR PARALLEL
+  # ════════════════════════════════════════════════════════════════
+
+  - alias: "Execute watering — sequential or parallel"
+    choose:
+
+      # ── Parallel mode: all zones open simultaneously ───────────
+      - conditions:
+          - condition: template
+            value_template: "{{ run_mode == 'parallel' }}"
+        sequence:
+          - alias: "All zones — run simultaneously"
+            parallel:
+              - sequence:
+                  - alias: "Zone 1 — water if due (parallel)"
+                    choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ z1_should_water }}"
+                        sequence:
+                          - service: homeassistant.turn_on
+                            target:
+                              entity_id: "{{ zone_1_valve }}"
+                          - delay:
+                              seconds: "{{ z1_duration }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_1_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_1_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_1_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+              - sequence:
+                  - alias: "Zone 2 — water if due (parallel)"
+                    choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ z2_should_water }}"
+                        sequence:
+                          - service: homeassistant.turn_on
+                            target:
+                              entity_id: "{{ zone_2_valve }}"
+                          - delay:
+                              seconds: "{{ z2_duration }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_2_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_2_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_2_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+              - sequence:
+                  - alias: "Zone 3 — water if due (parallel)"
+                    choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ z3_should_water }}"
+                        sequence:
+                          - service: homeassistant.turn_on
+                            target:
+                              entity_id: "{{ zone_3_valve }}"
+                          - delay:
+                              seconds: "{{ z3_duration }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_3_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_3_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_3_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+              - sequence:
+                  - alias: "Zone 4 — water if due (parallel)"
+                    choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ z4_should_water }}"
+                        sequence:
+                          - service: homeassistant.turn_on
+                            target:
+                              entity_id: "{{ zone_4_valve }}"
+                          - delay:
+                              seconds: "{{ z4_duration }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_4_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_4_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_4_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+          - alias: "All zones — update moisture lines post-watering (parallel)"
+            variables:
+              z1_moisture_end: >-
+                {% if zone_1_moisture_sensor != '' and
+                      states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_1_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z1_moisture_line: >-
+                {% if z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+                  Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+                {% elif zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+                  Soil: {{ z1_moisture_val | round(1) }}%
+                {% elif zone_1_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+              z2_moisture_end: >-
+                {% if zone_2_moisture_sensor != '' and
+                      states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_2_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z2_moisture_line: >-
+                {% if z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+                  Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+                {% elif zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+                  Soil: {{ z2_moisture_val | round(1) }}%
+                {% elif zone_2_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+              z3_moisture_end: >-
+                {% if zone_3_moisture_sensor != '' and
+                      states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_3_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z3_moisture_line: >-
+                {% if z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+                  Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+                {% elif zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+                  Soil: {{ z3_moisture_val | round(1) }}%
+                {% elif zone_3_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+              z4_moisture_end: >-
+                {% if zone_4_moisture_sensor != '' and
+                      states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_4_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z4_moisture_line: >-
+                {% if z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+                  Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+                {% elif zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+                  Soil: {{ z4_moisture_val | round(1) }}%
+                {% elif zone_4_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+    default:
+      - alias: "Zone 1 — water if due (sequential)"
+        choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ z1_should_water }}"
+            sequence:
+              - alias: "Zone 1 — open valve"
+                service: homeassistant.turn_on
+                target:
+                  entity_id: "{{ zone_1_valve }}"
+              - alias: "Zone 1 — wait"
+                delay:
+                  seconds: "{{ z1_duration }}"
+              - alias: "Zone 1 — close valve"
+                service: homeassistant.turn_off
+                target:
+                  entity_id: "{{ zone_1_valve }}"
+              - alias: "Zone 1 — record last watered"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ zone_1_last_watered != '' }}"
+                    sequence:
+                      - service: input_datetime.set_datetime
+                        target:
+                          entity_id: "{{ zone_1_last_watered }}"
+                        data:
+                          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      - alias: "Zone 1 — update moisture line post-watering"
+        variables:
+          z1_moisture_end: >-
+            {% if zone_1_moisture_sensor != '' and
+                  states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_1_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z1_moisture_line: >-
+            {% if z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+              Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+            {% elif zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+              Soil: {{ z1_moisture_val | round(1) }}%
+            {% elif zone_1_moisture_sensor != '' %}
+              Soil: sensor unavailable
+            {% else %}
+              Soil: no sensor
+            {% endif %}
+      - alias: "Zone 2 — water if due (sequential)"
+        choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ z2_should_water }}"
+            sequence:
+              - alias: "Zone 2 — open valve"
+                service: homeassistant.turn_on
+                target:
+                  entity_id: "{{ zone_2_valve }}"
+              - alias: "Zone 2 — wait"
+                delay:
+                  seconds: "{{ z2_duration }}"
+              - alias: "Zone 2 — close valve"
+                service: homeassistant.turn_off
+                target:
+                  entity_id: "{{ zone_2_valve }}"
+              - alias: "Zone 2 — record last watered"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ zone_2_last_watered != '' }}"
+                    sequence:
+                      - service: input_datetime.set_datetime
+                        target:
+                          entity_id: "{{ zone_2_last_watered }}"
+                        data:
+                          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      - alias: "Zone 2 — update moisture line post-watering"
+        variables:
+          z2_moisture_end: >-
+            {% if zone_2_moisture_sensor != '' and
+                  states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_2_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z2_moisture_line: >-
+            {% if z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+              Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+            {% elif zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+              Soil: {{ z2_moisture_val | round(1) }}%
+            {% elif zone_2_moisture_sensor != '' %}
+              Soil: sensor unavailable
+            {% else %}
+              Soil: no sensor
+            {% endif %}
+      - alias: "Zone 3 — water if due (sequential)"
+        choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ z3_should_water }}"
+            sequence:
+              - alias: "Zone 3 — open valve"
+                service: homeassistant.turn_on
+                target:
+                  entity_id: "{{ zone_3_valve }}"
+              - alias: "Zone 3 — wait"
+                delay:
+                  seconds: "{{ z3_duration }}"
+              - alias: "Zone 3 — close valve"
+                service: homeassistant.turn_off
+                target:
+                  entity_id: "{{ zone_3_valve }}"
+              - alias: "Zone 3 — record last watered"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ zone_3_last_watered != '' }}"
+                    sequence:
+                      - service: input_datetime.set_datetime
+                        target:
+                          entity_id: "{{ zone_3_last_watered }}"
+                        data:
+                          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      - alias: "Zone 3 — update moisture line post-watering"
+        variables:
+          z3_moisture_end: >-
+            {% if zone_3_moisture_sensor != '' and
+                  states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_3_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z3_moisture_line: >-
+            {% if z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+              Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+            {% elif zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+              Soil: {{ z3_moisture_val | round(1) }}%
+            {% elif zone_3_moisture_sensor != '' %}
+              Soil: sensor unavailable
+            {% else %}
+              Soil: no sensor
+            {% endif %}
+      - alias: "Zone 4 — water if due (sequential)"
+        choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ z4_should_water }}"
+            sequence:
+              - alias: "Zone 4 — open valve"
+                service: homeassistant.turn_on
+                target:
+                  entity_id: "{{ zone_4_valve }}"
+              - alias: "Zone 4 — wait"
+                delay:
+                  seconds: "{{ z4_duration }}"
+              - alias: "Zone 4 — close valve"
+                service: homeassistant.turn_off
+                target:
+                  entity_id: "{{ zone_4_valve }}"
+              - alias: "Zone 4 — record last watered"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ zone_4_last_watered != '' }}"
+                    sequence:
+                      - service: input_datetime.set_datetime
+                        target:
+                          entity_id: "{{ zone_4_last_watered }}"
+                        data:
+                          datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+      - alias: "Zone 4 — update moisture line post-watering"
+        variables:
+          z4_moisture_end: >-
+            {% if zone_4_moisture_sensor != '' and
+                  states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_4_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z4_moisture_line: >-
+            {% if z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+              Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+            {% elif zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+              Soil: {{ z4_moisture_val | round(1) }}%
+            {% elif zone_4_moisture_sensor != '' %}
+              Soil: sensor unavailable
+            {% else %}
+              Soil: no sensor
+            {% endif %}
 
   # ════════════════════════════════════════════════════════════════
   # CYCLE COMPLETE — SEND SUMMARY NOTIFICATION
@@ -1102,13 +1400,35 @@ action:
       notification_id: garden_watering_cycle
       message: "{{ _summary_message }}"
 
-  - alias: "Cycle complete — custom notify service"
+  - alias: "Cycle complete — notify target 1"
     choose:
       - conditions:
           - condition: template
             value_template: "{{ notify_target != '' }}"
         sequence:
           - service: "{{ notify_target }}"
+            data:
+              title: "🌱 Garden Watering — Cycle Complete"
+              message: "{{ _summary_message }}"
+
+  - alias: "Cycle complete — notify target 2"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notify_target_2 != '' }}"
+        sequence:
+          - service: "{{ notify_target_2 }}"
+            data:
+              title: "🌱 Garden Watering — Cycle Complete"
+              message: "{{ _summary_message }}"
+
+  - alias: "Cycle complete — notify target 3"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ notify_target_3 != '' }}"
+        sequence:
+          - service: "{{ notify_target_3 }}"
             data:
               title: "🌱 Garden Watering — Cycle Complete"
               message: "{{ _summary_message }}"

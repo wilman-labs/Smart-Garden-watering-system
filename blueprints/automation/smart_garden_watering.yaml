@@ -903,8 +903,68 @@ action:
                                     data:
                                       datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 
-      # ── Sequential mode (default): one zone at a time ──────────
-    default:
+          - alias: "All zones — update moisture lines post-watering (parallel)"
+            variables:
+              z1_moisture_end: >-
+                {% if zone_1_moisture_sensor != '' and
+                      states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_1_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z1_moisture_line: >-
+                {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+                  Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+                {% elif zone_1_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+              z2_moisture_end: >-
+                {% if zone_2_moisture_sensor != '' and
+                      states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_2_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z2_moisture_line: >-
+                {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+                  Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+                {% elif zone_2_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+              z3_moisture_end: >-
+                {% if zone_3_moisture_sensor != '' and
+                      states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_3_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z3_moisture_line: >-
+                {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+                  Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+                {% elif zone_3_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
+              z4_moisture_end: >-
+                {% if zone_4_moisture_sensor != '' and
+                      states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+                  {{ states(zone_4_moisture_sensor) | float(-1) }}
+                {% else %}
+                  -1
+                {% endif %}
+              z4_moisture_line: >-
+                {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+                  Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+                {% elif zone_4_moisture_sensor != '' %}
+                  Soil: sensor unavailable
+                {% else %}
+                  Soil: no sensor
+                {% endif %}
       - alias: "Zone 1 — water if due (sequential)"
         choose:
           - conditions:

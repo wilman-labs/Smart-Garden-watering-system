@@ -1120,8 +1120,10 @@ action:
                   -1
                 {% endif %}
               z1_moisture_line: >-
-                {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+                {% if z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
                   Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+                {% elif zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+                  Soil: {{ z1_moisture_val | round(1) }}%
                 {% elif zone_1_moisture_sensor != '' %}
                   Soil: sensor unavailable
                 {% else %}
@@ -1135,8 +1137,10 @@ action:
                   -1
                 {% endif %}
               z2_moisture_line: >-
-                {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+                {% if z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
                   Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+                {% elif zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+                  Soil: {{ z2_moisture_val | round(1) }}%
                 {% elif zone_2_moisture_sensor != '' %}
                   Soil: sensor unavailable
                 {% else %}
@@ -1150,8 +1154,10 @@ action:
                   -1
                 {% endif %}
               z3_moisture_line: >-
-                {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+                {% if z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
                   Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+                {% elif zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+                  Soil: {{ z3_moisture_val | round(1) }}%
                 {% elif zone_3_moisture_sensor != '' %}
                   Soil: sensor unavailable
                 {% else %}
@@ -1165,8 +1171,10 @@ action:
                   -1
                 {% endif %}
               z4_moisture_line: >-
-                {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+                {% if z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
                   Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+                {% elif zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+                  Soil: {{ z4_moisture_val | round(1) }}%
                 {% elif zone_4_moisture_sensor != '' %}
                   Soil: sensor unavailable
                 {% else %}
@@ -1211,8 +1219,10 @@ action:
               -1
             {% endif %}
           z1_moisture_line: >-
-            {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+            {% if z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
               Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+            {% elif zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+              Soil: {{ z1_moisture_val | round(1) }}%
             {% elif zone_1_moisture_sensor != '' %}
               Soil: sensor unavailable
             {% else %}
@@ -1256,8 +1266,10 @@ action:
               -1
             {% endif %}
           z2_moisture_line: >-
-            {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+            {% if z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
               Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+            {% elif zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+              Soil: {{ z2_moisture_val | round(1) }}%
             {% elif zone_2_moisture_sensor != '' %}
               Soil: sensor unavailable
             {% else %}
@@ -1301,8 +1313,10 @@ action:
               -1
             {% endif %}
           z3_moisture_line: >-
-            {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+            {% if z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
               Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+            {% elif zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+              Soil: {{ z3_moisture_val | round(1) }}%
             {% elif zone_3_moisture_sensor != '' %}
               Soil: sensor unavailable
             {% else %}
@@ -1346,8 +1360,10 @@ action:
               -1
             {% endif %}
           z4_moisture_line: >-
-            {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+            {% if z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
               Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+            {% elif zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+              Soil: {{ z4_moisture_val | round(1) }}%
             {% elif zone_4_moisture_sensor != '' %}
               Soil: sensor unavailable
             {% else %}

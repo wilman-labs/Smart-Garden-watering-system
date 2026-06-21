@@ -789,6 +789,213 @@ action:
         {% endif %}
 
   # ════════════════════════════════════════════════════════════════
+  # ZONE 2
+  # ════════════════════════════════════════════════════════════════
+
+  - alias: "Zone 2 — evaluate watering decision"
+    variables:
+      z2_moisture_val: >-
+        {% if zone_2_moisture_sensor != '' and
+              states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_2_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z2_days_elapsed: >-
+        {% if zone_2_last_watered != '' and
+              states(zone_2_last_watered) not in ['unknown', 'unavailable', ''] %}
+          {{ ((now() - as_datetime(states(zone_2_last_watered))).total_seconds() / 86400) | float(0) }}
+        {% else %}
+          999
+        {% endif %}
+      z2_interval_due: "{{ z2_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z2_force_water: >-
+        {% set thr = zone_2_moisture_water_threshold | int(0) %}
+        {% if z2_moisture_val >= 0 and thr > 0 %}
+          {{ z2_moisture_val < thr }}
+        {% else %}
+          false
+        {% endif %}
+      z2_skip_moisture: >-
+        {% set thr = zone_2_moisture_skip_threshold | int(0) %}
+        {% if z2_moisture_val >= 0 and thr > 0 %}
+          {{ z2_moisture_val > thr }}
+        {% else %}
+          false
+        {% endif %}
+      z2_duration: >-
+        {% if day_type | trim == 'cool' %}
+          {{ zone_2_cool_duration | int(300) }}
+        {% elif day_type | trim == 'hot' %}
+          {{ zone_2_hot_duration | int(900) }}
+        {% else %}
+          {{ zone_2_warm_duration | int(600) }}
+        {% endif %}
+      z2_should_water: >-
+        {{ (zone_2_enabled | bool(false))
+           and (zone_2_valve != '')
+           and ((z2_interval_due | bool(false)) or (z2_force_water | bool(false)))
+           and not (z2_skip_moisture | bool(false)) }}
+      z2_result: >-
+        {% if not (zone_2_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_2_valve == '' %}
+          ⏭ No valve configured
+        {% elif z2_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z2_moisture_val | round(1) }}% > {{ zone_2_moisture_skip_threshold }}%)
+        {% elif not (z2_interval_due | bool(false)) and not (z2_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z2_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z2_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z2_moisture_line: >-
+        {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+          Soil: {{ z2_moisture_val | round(1) }}%
+        {% elif zone_2_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
+
+  # ════════════════════════════════════════════════════════════════
+  # ZONE 3
+  # ════════════════════════════════════════════════════════════════
+
+  - alias: "Zone 3 — evaluate watering decision"
+    variables:
+      z3_moisture_val: >-
+        {% if zone_3_moisture_sensor != '' and
+              states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_3_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z3_days_elapsed: >-
+        {% if zone_3_last_watered != '' and
+              states(zone_3_last_watered) not in ['unknown', 'unavailable', ''] %}
+          {{ ((now() - as_datetime(states(zone_3_last_watered))).total_seconds() / 86400) | float(0) }}
+        {% else %}
+          999
+        {% endif %}
+      z3_interval_due: "{{ z3_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z3_force_water: >-
+        {% set thr = zone_3_moisture_water_threshold | int(0) %}
+        {% if z3_moisture_val >= 0 and thr > 0 %}
+          {{ z3_moisture_val < thr }}
+        {% else %}
+          false
+        {% endif %}
+      z3_skip_moisture: >-
+        {% set thr = zone_3_moisture_skip_threshold | int(0) %}
+        {% if z3_moisture_val >= 0 and thr > 0 %}
+          {{ z3_moisture_val > thr }}
+        {% else %}
+          false
+        {% endif %}
+      z3_duration: >-
+        {% if day_type | trim == 'cool' %}
+          {{ zone_3_cool_duration | int(300) }}
+        {% elif day_type | trim == 'hot' %}
+          {{ zone_3_hot_duration | int(900) }}
+        {% else %}
+          {{ zone_3_warm_duration | int(600) }}
+        {% endif %}
+      z3_should_water: >-
+        {{ (zone_3_enabled | bool(false))
+           and (zone_3_valve != '')
+           and ((z3_interval_due | bool(false)) or (z3_force_water | bool(false)))
+           and not (z3_skip_moisture | bool(false)) }}
+      z3_result: >-
+        {% if not (zone_3_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_3_valve == '' %}
+          ⏭ No valve configured
+        {% elif z3_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z3_moisture_val | round(1) }}% > {{ zone_3_moisture_skip_threshold }}%)
+        {% elif not (z3_interval_due | bool(false)) and not (z3_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z3_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z3_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z3_moisture_line: >-
+        {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+          Soil: {{ z3_moisture_val | round(1) }}%
+        {% elif zone_3_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
+
+  # ════════════════════════════════════════════════════════════════
+  # ZONE 4
+  # ════════════════════════════════════════════════════════════════
+
+  - alias: "Zone 4 — evaluate watering decision"
+    variables:
+      z4_moisture_val: >-
+        {% if zone_4_moisture_sensor != '' and
+              states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+          {{ states(zone_4_moisture_sensor) | float(-1) }}
+        {% else %}
+          -1
+        {% endif %}
+      z4_days_elapsed: >-
+        {% if zone_4_last_watered != '' and
+              states(zone_4_last_watered) not in ['unknown', 'unavailable', ''] %}
+          {{ ((now() - as_datetime(states(zone_4_last_watered))).total_seconds() / 86400) | float(0) }}
+        {% else %}
+          999
+        {% endif %}
+      z4_interval_due: "{{ z4_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z4_force_water: >-
+        {% set thr = zone_4_moisture_water_threshold | int(0) %}
+        {% if z4_moisture_val >= 0 and thr > 0 %}
+          {{ z4_moisture_val < thr }}
+        {% else %}
+          false
+        {% endif %}
+      z4_skip_moisture: >-
+        {% set thr = zone_4_moisture_skip_threshold | int(0) %}
+        {% if z4_moisture_val >= 0 and thr > 0 %}
+          {{ z4_moisture_val > thr }}
+        {% else %}
+          false
+        {% endif %}
+      z4_duration: >-
+        {% if day_type | trim == 'cool' %}
+          {{ zone_4_cool_duration | int(300) }}
+        {% elif day_type | trim == 'hot' %}
+          {{ zone_4_hot_duration | int(900) }}
+        {% else %}
+          {{ zone_4_warm_duration | int(600) }}
+        {% endif %}
+      z4_should_water: >-
+        {{ (zone_4_enabled | bool(false))
+           and (zone_4_valve != '')
+           and ((z4_interval_due | bool(false)) or (z4_force_water | bool(false)))
+           and not (z4_skip_moisture | bool(false)) }}
+      z4_result: >-
+        {% if not (zone_4_enabled | bool(false)) %}
+          ⏭ Disabled
+        {% elif zone_4_valve == '' %}
+          ⏭ No valve configured
+        {% elif z4_skip_moisture | bool(false) %}
+          ⏭ Skipped — soil already wet ({{ z4_moisture_val | round(1) }}% > {{ zone_4_moisture_skip_threshold }}%)
+        {% elif not (z4_interval_due | bool(false)) and not (z4_force_water | bool(false)) %}
+          ⏭ Skipped — not due yet ({{ z4_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+        {% else %}
+          💧 Watered {{ z4_duration }}s ({{ day_type | trim }} day)
+        {% endif %}
+      z4_moisture_line: >-
+        {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+          Soil: {{ z4_moisture_val | round(1) }}%
+        {% elif zone_4_moisture_sensor != '' %}
+          Soil: sensor unavailable
+        {% else %}
+          Soil: no sensor
+        {% endif %}
+
+  # ════════════════════════════════════════════════════════════════
   # EXECUTE ZONES — SEQUENTIAL OR PARALLEL
   # ════════════════════════════════════════════════════════════════
 
@@ -965,6 +1172,7 @@ action:
                 {% else %}
                   Soil: no sensor
                 {% endif %}
+    default:
       - alias: "Zone 1 — water if due (sequential)"
         choose:
           - conditions:

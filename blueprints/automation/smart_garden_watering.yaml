@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Garden Watering System
+  name: Smart Garden Watering System v0.4
   description: >-
     Automatic 4-zone garden watering system that adapts to daily weather forecasts
     and optional soil moisture sensors.

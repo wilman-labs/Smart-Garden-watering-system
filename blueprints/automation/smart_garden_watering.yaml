@@ -1002,7 +1002,11 @@ action:
                           - condition: template
                             value_template: "{{ z1_valve_offline }}"
                         sequence:
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_1_valve }}"
                           - variables:
+                              z1_should_water: false
                               z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
                     default:
                       - delay:
@@ -1041,7 +1045,11 @@ action:
                           - condition: template
                             value_template: "{{ z2_valve_offline }}"
                         sequence:
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_2_valve }}"
                           - variables:
+                              z2_should_water: false
                               z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
                     default:
                       - delay:
@@ -1080,7 +1088,11 @@ action:
                           - condition: template
                             value_template: "{{ z3_valve_offline }}"
                         sequence:
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_3_valve }}"
                           - variables:
+                              z3_should_water: false
                               z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
                     default:
                       - delay:
@@ -1119,7 +1131,11 @@ action:
                           - condition: template
                             value_template: "{{ z4_valve_offline }}"
                         sequence:
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_4_valve }}"
                           - variables:
+                              z4_should_water: false
                               z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
                     default:
                       - delay:

@@ -1006,8 +1006,7 @@ action:
                               z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
                     default:
                       - delay:
-                          minutes: "{{ z1_duration | int - 1 }}"
-                          seconds: 58
+                          minutes: "{{ z1_duration | int }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_1_valve }}"
@@ -1046,8 +1045,7 @@ action:
                               z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
                     default:
                       - delay:
-                          minutes: "{{ z2_duration | int - 1 }}"
-                          seconds: 58
+                          minutes: "{{ z2_duration | int }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_2_valve }}"
@@ -1086,8 +1084,7 @@ action:
                               z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
                     default:
                       - delay:
-                          minutes: "{{ z3_duration | int - 1 }}"
-                          seconds: 58
+                          minutes: "{{ z3_duration | int }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_3_valve }}"
@@ -1126,8 +1123,7 @@ action:
                               z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
                     default:
                       - delay:
-                          minutes: "{{ z4_duration | int - 1 }}"
-                          seconds: 58
+                          minutes: "{{ z4_duration | int }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_4_valve }}"

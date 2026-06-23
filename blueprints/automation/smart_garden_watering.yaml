@@ -13,17 +13,19 @@ blueprint:
 
     - Three watering durations based on today's forecast high: cool / warm / hot
 
-    - Interval-based scheduling (water every N days) tracked via input_datetime helpers
+    - Per-zone interval-based scheduling (water every N days) tracked via input_datetime helpers
 
     - Per-zone soil moisture sensor (optional):
         • Skip zone if soil is already wet (above skip threshold)
         • Force-water zone regardless of interval if soil is too dry (below water threshold)
 
-    - 4 independent zones — each with its own valve, sensor, durations, and thresholds
+    - 4 independent zones — each with its own valve, sensor, durations, interval, and thresholds
 
     - **Parallel** zone execution — all due zones run simultaneously
 
-    - **Multi-target notifications** — send cycle summaries to up to three notification services
+    - Valve availability check — reports offline valves in notifications
+
+    - **Single notification target** — send cycle summaries to one notification service
 
 
     **Pre-requisites**
@@ -113,55 +115,22 @@ blueprint:
               unit_of_measurement: "°C"
               mode: slider
 
-        watering_interval_days:
-          name: Watering Interval (days)
-          description: >-
-            Minimum number of days between watering runs.
-            Set to 1 to water every day (weather permitting).
-          default: 2
-          selector:
-            number:
-              min: 1
-              max: 30
-              step: 1
-              unit_of_measurement: days
-              mode: box
-
     # ── Notifications ───────────────────────────────────────────────
     notifications:
       name: Notifications
       icon: mdi:bell-outline
       description: >-
-        Configure which notification services receive cycle summaries.
+        Configure which notification service receives cycle summaries.
         A persistent Home Assistant notification is always created.
-        Add up to three external notification targets (e.g. mobile apps, Slack, etc.).
+        Add one external notification target (e.g. mobile app, Slack, etc.).
       input:
 
         notify_target:
-          name: "Notification Target 1 (optional)"
+          name: "Notification Target (optional)"
           description: >-
-            First notify service to call with the cycle summary.
+            Notify service to call with the cycle summary.
             Examples: notify.mobile_app_my_phone, notify.notify
             Leave empty to only create a persistent HA notification.
-          default: ""
-          selector:
-            text: {}
-
-        notify_target_2:
-          name: "Notification Target 2 (optional)"
-          description: >-
-            Second notify service for an additional recipient
-            (e.g. a different phone, a Slack channel).
-            Leave empty to skip.
-          default: ""
-          selector:
-            text: {}
-
-        notify_target_3:
-          name: "Notification Target 3 (optional)"
-          description: >-
-            Third notify service for a third recipient.
-            Leave empty to skip.
           default: ""
           selector:
             text: {}
@@ -205,6 +174,20 @@ blueprint:
             entity:
               domain: input_datetime
 
+        zone_1_watering_interval_days:
+          name: "Zone 1 — Watering Interval (days)"
+          description: >-
+            Minimum number of days between watering runs for Zone 1.
+            Set to 1 to water every day (weather permitting).
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 10
+              step: 1
+              unit_of_measurement: days
+              mode: slider
+
         zone_1_moisture_sensor:
           name: "Zone 1 — Soil Moisture Sensor (optional)"
           description: >-
@@ -244,36 +227,36 @@ blueprint:
               mode: slider
 
         zone_1_cool_duration:
-          name: "Zone 1 — Cool Day Duration (seconds)"
-          default: 300
+          name: "Zone 1 — Cool Day Duration (minutes)"
+          default: 5
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_1_warm_duration:
-          name: "Zone 1 — Warm Day Duration (seconds)"
-          default: 600
+          name: "Zone 1 — Warm Day Duration (minutes)"
+          default: 10
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_1_hot_duration:
-          name: "Zone 1 — Hot Day Duration (seconds)"
-          default: 900
+          name: "Zone 1 — Hot Day Duration (minutes)"
+          default: 15
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
     # ── Zone 2 ─────────────────────────────────────────────────────
@@ -306,6 +289,20 @@ blueprint:
             entity:
               domain: input_datetime
 
+        zone_2_watering_interval_days:
+          name: "Zone 2 — Watering Interval (days)"
+          description: >-
+            Minimum number of days between watering runs for Zone 2.
+            Set to 1 to water every day (weather permitting).
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 10
+              step: 1
+              unit_of_measurement: days
+              mode: slider
+
         zone_2_moisture_sensor:
           name: "Zone 2 — Soil Moisture Sensor (optional)"
           default: ""
@@ -336,36 +333,36 @@ blueprint:
               mode: slider
 
         zone_2_cool_duration:
-          name: "Zone 2 — Cool Day Duration (seconds)"
-          default: 300
+          name: "Zone 2 — Cool Day Duration (minutes)"
+          default: 5
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_2_warm_duration:
-          name: "Zone 2 — Warm Day Duration (seconds)"
-          default: 600
+          name: "Zone 2 — Warm Day Duration (minutes)"
+          default: 10
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_2_hot_duration:
-          name: "Zone 2 — Hot Day Duration (seconds)"
-          default: 900
+          name: "Zone 2 — Hot Day Duration (minutes)"
+          default: 15
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
     # ── Zone 3 ─────────────────────────────────────────────────────
@@ -398,6 +395,20 @@ blueprint:
             entity:
               domain: input_datetime
 
+        zone_3_watering_interval_days:
+          name: "Zone 3 — Watering Interval (days)"
+          description: >-
+            Minimum number of days between watering runs for Zone 3.
+            Set to 1 to water every day (weather permitting).
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 10
+              step: 1
+              unit_of_measurement: days
+              mode: slider
+
         zone_3_moisture_sensor:
           name: "Zone 3 — Soil Moisture Sensor (optional)"
           default: ""
@@ -428,36 +439,36 @@ blueprint:
               mode: slider
 
         zone_3_cool_duration:
-          name: "Zone 3 — Cool Day Duration (seconds)"
-          default: 300
+          name: "Zone 3 — Cool Day Duration (minutes)"
+          default: 5
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_3_warm_duration:
-          name: "Zone 3 — Warm Day Duration (seconds)"
-          default: 600
+          name: "Zone 3 — Warm Day Duration (minutes)"
+          default: 10
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_3_hot_duration:
-          name: "Zone 3 — Hot Day Duration (seconds)"
-          default: 900
+          name: "Zone 3 — Hot Day Duration (minutes)"
+          default: 15
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
     # ── Zone 4 ─────────────────────────────────────────────────────
@@ -490,6 +501,20 @@ blueprint:
             entity:
               domain: input_datetime
 
+        zone_4_watering_interval_days:
+          name: "Zone 4 — Watering Interval (days)"
+          description: >-
+            Minimum number of days between watering runs for Zone 4.
+            Set to 1 to water every day (weather permitting).
+          default: 2
+          selector:
+            number:
+              min: 1
+              max: 10
+              step: 1
+              unit_of_measurement: days
+              mode: slider
+
         zone_4_moisture_sensor:
           name: "Zone 4 — Soil Moisture Sensor (optional)"
           default: ""
@@ -520,36 +545,36 @@ blueprint:
               mode: slider
 
         zone_4_cool_duration:
-          name: "Zone 4 — Cool Day Duration (seconds)"
-          default: 300
+          name: "Zone 4 — Cool Day Duration (minutes)"
+          default: 5
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_4_warm_duration:
-          name: "Zone 4 — Warm Day Duration (seconds)"
-          default: 600
+          name: "Zone 4 — Warm Day Duration (minutes)"
+          default: 10
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
         zone_4_hot_duration:
-          name: "Zone 4 — Hot Day Duration (seconds)"
-          default: 900
+          name: "Zone 4 — Hot Day Duration (minutes)"
+          default: 15
           selector:
             number:
-              min: 10
-              max: 7200
-              step: 10
-              unit_of_measurement: s
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
               mode: box
 
 # ── Trigger ──────────────────────────────────────────────────────────
@@ -563,21 +588,17 @@ mode: single
 max_exceeded: silent
 
 # ── Variables ────────────────────────────────────────────────────────
-# Resolve all blueprint inputs into named variables so they can be
-# referenced cleanly inside action templates.
 variables:
   weather_entity: !input weather_entity
   rain_threshold: !input rain_threshold
   temperature_cool_max: !input temperature_cool_max
   temperature_hot_min: !input temperature_hot_min
-  watering_interval_days: !input watering_interval_days
   notify_target: !input notify_target
-  notify_target_2: !input notify_target_2
-  notify_target_3: !input notify_target_3
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
   zone_1_valve: !input zone_1_valve
   zone_1_last_watered: !input zone_1_last_watered
+  zone_1_watering_interval_days: !input zone_1_watering_interval_days
   zone_1_moisture_sensor: !input zone_1_moisture_sensor
   zone_1_moisture_skip_threshold: !input zone_1_moisture_skip_threshold
   zone_1_moisture_water_threshold: !input zone_1_moisture_water_threshold
@@ -588,6 +609,7 @@ variables:
   zone_2_enabled: !input zone_2_enabled
   zone_2_valve: !input zone_2_valve
   zone_2_last_watered: !input zone_2_last_watered
+  zone_2_watering_interval_days: !input zone_2_watering_interval_days
   zone_2_moisture_sensor: !input zone_2_moisture_sensor
   zone_2_moisture_skip_threshold: !input zone_2_moisture_skip_threshold
   zone_2_moisture_water_threshold: !input zone_2_moisture_water_threshold
@@ -598,6 +620,7 @@ variables:
   zone_3_enabled: !input zone_3_enabled
   zone_3_valve: !input zone_3_valve
   zone_3_last_watered: !input zone_3_last_watered
+  zone_3_watering_interval_days: !input zone_3_watering_interval_days
   zone_3_moisture_sensor: !input zone_3_moisture_sensor
   zone_3_moisture_skip_threshold: !input zone_3_moisture_skip_threshold
   zone_3_moisture_water_threshold: !input zone_3_moisture_water_threshold
@@ -608,6 +631,7 @@ variables:
   zone_4_enabled: !input zone_4_enabled
   zone_4_valve: !input zone_4_valve
   zone_4_last_watered: !input zone_4_last_watered
+  zone_4_watering_interval_days: !input zone_4_watering_interval_days
   zone_4_moisture_sensor: !input zone_4_moisture_sensor
   zone_4_moisture_skip_threshold: !input zone_4_moisture_skip_threshold
   zone_4_moisture_water_threshold: !input zone_4_moisture_water_threshold
@@ -658,7 +682,7 @@ action:
               message: |-
                 All zones skipped today.
 
-                🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm)
+                🌧 Forecast rain: {{ today_precipitation }} mm — threshold: {{ rain_threshold }} mm
                 🌡 Forecast high: {{ today_high_temp }}°C
           - alias: "Notify — rain skip (custom service)"
             choose:
@@ -671,33 +695,7 @@ action:
                       title: "🌧 Garden Watering — Skipped (Rain)"
                       message: |-
                         All zones skipped today.
-                        🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
-                        🌡 Forecast high: {{ today_high_temp }}°C
-          - alias: "Notify — rain skip (notify target 2)"
-            choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ notify_target_2 != '' }}"
-                sequence:
-                  - service: "{{ notify_target_2 }}"
-                    data:
-                      title: "🌧 Garden Watering — Skipped (Rain)"
-                      message: |-
-                        All zones skipped today.
-                        🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
-                        🌡 Forecast high: {{ today_high_temp }}°C
-          - alias: "Notify — rain skip (notify target 3)"
-            choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ notify_target_3 != '' }}"
-                sequence:
-                  - service: "{{ notify_target_3 }}"
-                    data:
-                      title: "🌧 Garden Watering — Skipped (Rain)"
-                      message: |-
-                        All zones skipped today.
-                        🌧 Forecast rain: {{ today_precipitation }} mm (threshold: {{ rain_threshold }} mm).
+                        🌧 Forecast rain: {{ today_precipitation }} mm — threshold: {{ rain_threshold }} mm
                         🌡 Forecast high: {{ today_high_temp }}°C
           - stop: "Rain threshold exceeded — all watering skipped"
 
@@ -721,7 +719,7 @@ action:
         {% else %}
           999
         {% endif %}
-      z1_interval_due: "{{ z1_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z1_interval_due: "{{ z1_days_elapsed >= (zone_1_watering_interval_days | int(2)) }}"
       z1_force_water: >-
         {% set thr = zone_1_moisture_water_threshold | int(0) %}
         {% if z1_moisture_val >= 0 and thr > 0 %}
@@ -738,11 +736,11 @@ action:
         {% endif %}
       z1_duration: >-
         {% if day_type | trim == 'cool' %}
-          {{ zone_1_cool_duration | int(300) }}
+          {{ zone_1_cool_duration | int(5) }}
         {% elif day_type | trim == 'hot' %}
-          {{ zone_1_hot_duration | int(900) }}
+          {{ zone_1_hot_duration | int(15) }}
         {% else %}
-          {{ zone_1_warm_duration | int(600) }}
+          {{ zone_1_warm_duration | int(10) }}
         {% endif %}
       z1_should_water: >-
         {{ (zone_1_enabled | bool(false))
@@ -755,11 +753,11 @@ action:
         {% elif zone_1_valve == '' %}
           ⏭ No valve configured
         {% elif z1_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil already wet ({{ z1_moisture_val | round(1) }}% > {{ zone_1_moisture_skip_threshold }}%)
+          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(1) }}% is above skip threshold {{ zone_1_moisture_skip_threshold }}%
         {% elif not (z1_interval_due | bool(false)) and not (z1_force_water | bool(false)) %}
-          ⏭ Skipped — not due yet ({{ z1_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+          ⏭ Skipped — {{ z1_days_elapsed | round(1) }} days elapsed, interval is {{ zone_1_watering_interval_days }} days
         {% else %}
-          💧 Watered {{ z1_duration }}s ({{ day_type | trim }} day)
+          💧 Watered {{ z1_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z1_moisture_line: >-
         {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
@@ -790,7 +788,7 @@ action:
         {% else %}
           999
         {% endif %}
-      z2_interval_due: "{{ z2_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z2_interval_due: "{{ z2_days_elapsed >= (zone_2_watering_interval_days | int(2)) }}"
       z2_force_water: >-
         {% set thr = zone_2_moisture_water_threshold | int(0) %}
         {% if z2_moisture_val >= 0 and thr > 0 %}
@@ -807,11 +805,11 @@ action:
         {% endif %}
       z2_duration: >-
         {% if day_type | trim == 'cool' %}
-          {{ zone_2_cool_duration | int(300) }}
+          {{ zone_2_cool_duration | int(5) }}
         {% elif day_type | trim == 'hot' %}
-          {{ zone_2_hot_duration | int(900) }}
+          {{ zone_2_hot_duration | int(15) }}
         {% else %}
-          {{ zone_2_warm_duration | int(600) }}
+          {{ zone_2_warm_duration | int(10) }}
         {% endif %}
       z2_should_water: >-
         {{ (zone_2_enabled | bool(false))
@@ -824,11 +822,11 @@ action:
         {% elif zone_2_valve == '' %}
           ⏭ No valve configured
         {% elif z2_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil already wet ({{ z2_moisture_val | round(1) }}% > {{ zone_2_moisture_skip_threshold }}%)
+          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(1) }}% is above skip threshold {{ zone_2_moisture_skip_threshold }}%
         {% elif not (z2_interval_due | bool(false)) and not (z2_force_water | bool(false)) %}
-          ⏭ Skipped — not due yet ({{ z2_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+          ⏭ Skipped — {{ z2_days_elapsed | round(1) }} days elapsed, interval is {{ zone_2_watering_interval_days }} days
         {% else %}
-          💧 Watered {{ z2_duration }}s ({{ day_type | trim }} day)
+          💧 Watered {{ z2_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z2_moisture_line: >-
         {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
@@ -859,7 +857,7 @@ action:
         {% else %}
           999
         {% endif %}
-      z3_interval_due: "{{ z3_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z3_interval_due: "{{ z3_days_elapsed >= (zone_3_watering_interval_days | int(2)) }}"
       z3_force_water: >-
         {% set thr = zone_3_moisture_water_threshold | int(0) %}
         {% if z3_moisture_val >= 0 and thr > 0 %}
@@ -876,11 +874,11 @@ action:
         {% endif %}
       z3_duration: >-
         {% if day_type | trim == 'cool' %}
-          {{ zone_3_cool_duration | int(300) }}
+          {{ zone_3_cool_duration | int(5) }}
         {% elif day_type | trim == 'hot' %}
-          {{ zone_3_hot_duration | int(900) }}
+          {{ zone_3_hot_duration | int(15) }}
         {% else %}
-          {{ zone_3_warm_duration | int(600) }}
+          {{ zone_3_warm_duration | int(10) }}
         {% endif %}
       z3_should_water: >-
         {{ (zone_3_enabled | bool(false))
@@ -893,11 +891,11 @@ action:
         {% elif zone_3_valve == '' %}
           ⏭ No valve configured
         {% elif z3_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil already wet ({{ z3_moisture_val | round(1) }}% > {{ zone_3_moisture_skip_threshold }}%)
+          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(1) }}% is above skip threshold {{ zone_3_moisture_skip_threshold }}%
         {% elif not (z3_interval_due | bool(false)) and not (z3_force_water | bool(false)) %}
-          ⏭ Skipped — not due yet ({{ z3_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+          ⏭ Skipped — {{ z3_days_elapsed | round(1) }} days elapsed, interval is {{ zone_3_watering_interval_days }} days
         {% else %}
-          💧 Watered {{ z3_duration }}s ({{ day_type | trim }} day)
+          💧 Watered {{ z3_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z3_moisture_line: >-
         {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
@@ -928,7 +926,7 @@ action:
         {% else %}
           999
         {% endif %}
-      z4_interval_due: "{{ z4_days_elapsed >= (watering_interval_days | int(2)) }}"
+      z4_interval_due: "{{ z4_days_elapsed >= (zone_4_watering_interval_days | int(2)) }}"
       z4_force_water: >-
         {% set thr = zone_4_moisture_water_threshold | int(0) %}
         {% if z4_moisture_val >= 0 and thr > 0 %}
@@ -945,11 +943,11 @@ action:
         {% endif %}
       z4_duration: >-
         {% if day_type | trim == 'cool' %}
-          {{ zone_4_cool_duration | int(300) }}
+          {{ zone_4_cool_duration | int(5) }}
         {% elif day_type | trim == 'hot' %}
-          {{ zone_4_hot_duration | int(900) }}
+          {{ zone_4_hot_duration | int(15) }}
         {% else %}
-          {{ zone_4_warm_duration | int(600) }}
+          {{ zone_4_warm_duration | int(10) }}
         {% endif %}
       z4_should_water: >-
         {{ (zone_4_enabled | bool(false))
@@ -962,11 +960,11 @@ action:
         {% elif zone_4_valve == '' %}
           ⏭ No valve configured
         {% elif z4_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil already wet ({{ z4_moisture_val | round(1) }}% > {{ zone_4_moisture_skip_threshold }}%)
+          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(1) }}% is above skip threshold {{ zone_4_moisture_skip_threshold }}%
         {% elif not (z4_interval_due | bool(false)) and not (z4_force_water | bool(false)) %}
-          ⏭ Skipped — not due yet ({{ z4_days_elapsed | round(1) }} of {{ watering_interval_days }} days)
+          ⏭ Skipped — {{ z4_days_elapsed | round(1) }} days elapsed, interval is {{ zone_4_watering_interval_days }} days
         {% else %}
-          💧 Watered {{ z4_duration }}s ({{ day_type | trim }} day)
+          💧 Watered {{ z4_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z4_moisture_line: >-
         {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
@@ -994,20 +992,35 @@ action:
                     target:
                       entity_id: "{{ zone_1_valve }}"
                   - delay:
-                      seconds: "{{ z1_duration }}"
-                  - service: homeassistant.turn_off
-                    target:
-                      entity_id: "{{ zone_1_valve }}"
+                      seconds: 2
+                  - alias: "Zone 1 — check valve responded"
+                    variables:
+                      z1_valve_state: "{{ states(zone_1_valve) }}"
+                      z1_valve_offline: "{{ z1_valve_state in ['unavailable', 'unknown'] }}"
                   - choose:
                       - conditions:
                           - condition: template
-                            value_template: "{{ zone_1_last_watered != '' }}"
+                            value_template: "{{ z1_valve_offline }}"
                         sequence:
-                          - service: input_datetime.set_datetime
-                            target:
-                              entity_id: "{{ zone_1_last_watered }}"
-                            data:
-                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                          - variables:
+                              z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
+                    default:
+                      - delay:
+                          minutes: "{{ z1_duration | int - 1 }}"
+                          seconds: 58
+                      - service: homeassistant.turn_off
+                        target:
+                          entity_id: "{{ zone_1_valve }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ zone_1_last_watered != '' }}"
+                            sequence:
+                              - service: input_datetime.set_datetime
+                                target:
+                                  entity_id: "{{ zone_1_last_watered }}"
+                                data:
+                                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
       - sequence:
           - alias: "Zone 2 — water if due"
             choose:
@@ -1019,20 +1032,35 @@ action:
                     target:
                       entity_id: "{{ zone_2_valve }}"
                   - delay:
-                      seconds: "{{ z2_duration }}"
-                  - service: homeassistant.turn_off
-                    target:
-                      entity_id: "{{ zone_2_valve }}"
+                      seconds: 2
+                  - alias: "Zone 2 — check valve responded"
+                    variables:
+                      z2_valve_state: "{{ states(zone_2_valve) }}"
+                      z2_valve_offline: "{{ z2_valve_state in ['unavailable', 'unknown'] }}"
                   - choose:
                       - conditions:
                           - condition: template
-                            value_template: "{{ zone_2_last_watered != '' }}"
+                            value_template: "{{ z2_valve_offline }}"
                         sequence:
-                          - service: input_datetime.set_datetime
-                            target:
-                              entity_id: "{{ zone_2_last_watered }}"
-                            data:
-                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                          - variables:
+                              z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
+                    default:
+                      - delay:
+                          minutes: "{{ z2_duration | int - 1 }}"
+                          seconds: 58
+                      - service: homeassistant.turn_off
+                        target:
+                          entity_id: "{{ zone_2_valve }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ zone_2_last_watered != '' }}"
+                            sequence:
+                              - service: input_datetime.set_datetime
+                                target:
+                                  entity_id: "{{ zone_2_last_watered }}"
+                                data:
+                                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
       - sequence:
           - alias: "Zone 3 — water if due"
             choose:
@@ -1044,20 +1072,35 @@ action:
                     target:
                       entity_id: "{{ zone_3_valve }}"
                   - delay:
-                      seconds: "{{ z3_duration }}"
-                  - service: homeassistant.turn_off
-                    target:
-                      entity_id: "{{ zone_3_valve }}"
+                      seconds: 2
+                  - alias: "Zone 3 — check valve responded"
+                    variables:
+                      z3_valve_state: "{{ states(zone_3_valve) }}"
+                      z3_valve_offline: "{{ z3_valve_state in ['unavailable', 'unknown'] }}"
                   - choose:
                       - conditions:
                           - condition: template
-                            value_template: "{{ zone_3_last_watered != '' }}"
+                            value_template: "{{ z3_valve_offline }}"
                         sequence:
-                          - service: input_datetime.set_datetime
-                            target:
-                              entity_id: "{{ zone_3_last_watered }}"
-                            data:
-                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                          - variables:
+                              z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
+                    default:
+                      - delay:
+                          minutes: "{{ z3_duration | int - 1 }}"
+                          seconds: 58
+                      - service: homeassistant.turn_off
+                        target:
+                          entity_id: "{{ zone_3_valve }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ zone_3_last_watered != '' }}"
+                            sequence:
+                              - service: input_datetime.set_datetime
+                                target:
+                                  entity_id: "{{ zone_3_last_watered }}"
+                                data:
+                                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
       - sequence:
           - alias: "Zone 4 — water if due"
             choose:
@@ -1069,20 +1112,35 @@ action:
                     target:
                       entity_id: "{{ zone_4_valve }}"
                   - delay:
-                      seconds: "{{ z4_duration }}"
-                  - service: homeassistant.turn_off
-                    target:
-                      entity_id: "{{ zone_4_valve }}"
+                      seconds: 2
+                  - alias: "Zone 4 — check valve responded"
+                    variables:
+                      z4_valve_state: "{{ states(zone_4_valve) }}"
+                      z4_valve_offline: "{{ z4_valve_state in ['unavailable', 'unknown'] }}"
                   - choose:
                       - conditions:
                           - condition: template
-                            value_template: "{{ zone_4_last_watered != '' }}"
+                            value_template: "{{ z4_valve_offline }}"
                         sequence:
-                          - service: input_datetime.set_datetime
-                            target:
-                              entity_id: "{{ zone_4_last_watered }}"
-                            data:
-                              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+                          - variables:
+                              z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
+                    default:
+                      - delay:
+                          minutes: "{{ z4_duration | int - 1 }}"
+                          seconds: 58
+                      - service: homeassistant.turn_off
+                        target:
+                          entity_id: "{{ zone_4_valve }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ zone_4_last_watered != '' }}"
+                            sequence:
+                              - service: input_datetime.set_datetime
+                                target:
+                                  entity_id: "{{ zone_4_last_watered }}"
+                                data:
+                                  datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
 
   - alias: "All zones — update moisture lines post-watering"
     variables:
@@ -1185,35 +1243,13 @@ action:
       notification_id: garden_watering_cycle
       message: "{{ _summary_message }}"
 
-  - alias: "Cycle complete — notify target 1"
+  - alias: "Cycle complete — notify target"
     choose:
       - conditions:
           - condition: template
             value_template: "{{ notify_target != '' }}"
         sequence:
           - service: "{{ notify_target }}"
-            data:
-              title: "🌱 Garden Watering — Cycle Complete"
-              message: "{{ _summary_message }}"
-
-  - alias: "Cycle complete — notify target 2"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ notify_target_2 != '' }}"
-        sequence:
-          - service: "{{ notify_target_2 }}"
-            data:
-              title: "🌱 Garden Watering — Cycle Complete"
-              message: "{{ _summary_message }}"
-
-  - alias: "Cycle complete — notify target 3"
-    choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ notify_target_3 != '' }}"
-        sequence:
-          - service: "{{ notify_target_3 }}"
             data:
               title: "🌱 Garden Watering — Cycle Complete"
               message: "{{ _summary_message }}"

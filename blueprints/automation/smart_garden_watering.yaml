@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Garden Watering System v0.4
+  name: Smart Garden Watering System v0.5
   description: >-
     Automatic 4-zone garden watering system that adapts to daily weather forecasts
     and optional soil moisture sensors.
@@ -150,6 +150,15 @@ blueprint:
           selector:
             boolean: {}
 
+        zone_1_name:
+          name: "Zone 1 — Name (optional)"
+          description: >-
+            A friendly name for this zone (e.g. "Front Lawn", "Vegetable Garden").
+            Used in notification messages. Falls back to "Zone 1" when left empty.
+          default: ""
+          selector:
+            text: {}
+
         zone_1_valve:
           name: "Zone 1 — Valve"
           description: >-
@@ -272,6 +281,15 @@ blueprint:
           selector:
             boolean: {}
 
+        zone_2_name:
+          name: "Zone 2 — Name (optional)"
+          description: >-
+            A friendly name for this zone (e.g. "Back Garden", "Pots").
+            Used in notification messages. Falls back to "Zone 2" when left empty.
+          default: ""
+          selector:
+            text: {}
+
         zone_2_valve:
           name: "Zone 2 — Valve"
           default: ""
@@ -378,6 +396,15 @@ blueprint:
           selector:
             boolean: {}
 
+        zone_3_name:
+          name: "Zone 3 — Name (optional)"
+          description: >-
+            A friendly name for this zone (e.g. "Side Beds", "Orchard").
+            Used in notification messages. Falls back to "Zone 3" when left empty.
+          default: ""
+          selector:
+            text: {}
+
         zone_3_valve:
           name: "Zone 3 — Valve"
           default: ""
@@ -483,6 +510,15 @@ blueprint:
           default: false
           selector:
             boolean: {}
+
+        zone_4_name:
+          name: "Zone 4 — Name (optional)"
+          description: >-
+            A friendly name for this zone (e.g. "Greenhouse", "Hedge Row").
+            Used in notification messages. Falls back to "Zone 4" when left empty.
+          default: ""
+          selector:
+            text: {}
 
         zone_4_valve:
           name: "Zone 4 — Valve"
@@ -596,6 +632,7 @@ variables:
   notify_target: !input notify_target
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
+  zone_1_name: !input zone_1_name
   zone_1_valve: !input zone_1_valve
   zone_1_last_watered: !input zone_1_last_watered
   zone_1_watering_interval_days: !input zone_1_watering_interval_days
@@ -607,6 +644,7 @@ variables:
   zone_1_hot_duration: !input zone_1_hot_duration
   # Zone 2
   zone_2_enabled: !input zone_2_enabled
+  zone_2_name: !input zone_2_name
   zone_2_valve: !input zone_2_valve
   zone_2_last_watered: !input zone_2_last_watered
   zone_2_watering_interval_days: !input zone_2_watering_interval_days
@@ -618,6 +656,7 @@ variables:
   zone_2_hot_duration: !input zone_2_hot_duration
   # Zone 3
   zone_3_enabled: !input zone_3_enabled
+  zone_3_name: !input zone_3_name
   zone_3_valve: !input zone_3_valve
   zone_3_last_watered: !input zone_3_last_watered
   zone_3_watering_interval_days: !input zone_3_watering_interval_days
@@ -629,6 +668,7 @@ variables:
   zone_3_hot_duration: !input zone_3_hot_duration
   # Zone 4
   zone_4_enabled: !input zone_4_enabled
+  zone_4_name: !input zone_4_name
   zone_4_valve: !input zone_4_valve
   zone_4_last_watered: !input zone_4_last_watered
   zone_4_watering_interval_days: !input zone_4_watering_interval_days
@@ -753,7 +793,7 @@ action:
         {% elif zone_1_valve == '' %}
           ⏭ No valve configured
         {% elif z1_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(1) }}% is above skip threshold {{ zone_1_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(1) }}% is above {{ zone_1_moisture_skip_threshold }}%
         {% elif not (z1_interval_due | bool(false)) and not (z1_force_water | bool(false)) %}
           ⏭ Skipped — {{ z1_days_elapsed | round(1) }} days elapsed, interval is {{ zone_1_watering_interval_days }} days
         {% else %}
@@ -761,11 +801,11 @@ action:
         {% endif %}
       z1_moisture_line: >-
         {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Soil: {{ z1_moisture_val | round(1) }}%
+          Final Moisture : {{ z1_moisture_val | round(1) }}%
         {% elif zone_1_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
 
   # ════════════════════════════════════════════════════════════════
@@ -822,7 +862,7 @@ action:
         {% elif zone_2_valve == '' %}
           ⏭ No valve configured
         {% elif z2_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(1) }}% is above skip threshold {{ zone_2_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(1) }}% is above {{ zone_2_moisture_skip_threshold }}%
         {% elif not (z2_interval_due | bool(false)) and not (z2_force_water | bool(false)) %}
           ⏭ Skipped — {{ z2_days_elapsed | round(1) }} days elapsed, interval is {{ zone_2_watering_interval_days }} days
         {% else %}
@@ -830,11 +870,11 @@ action:
         {% endif %}
       z2_moisture_line: >-
         {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Soil: {{ z2_moisture_val | round(1) }}%
+          Final Moisture : {{ z2_moisture_val | round(1) }}%
         {% elif zone_2_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
 
   # ════════════════════════════════════════════════════════════════
@@ -891,7 +931,7 @@ action:
         {% elif zone_3_valve == '' %}
           ⏭ No valve configured
         {% elif z3_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(1) }}% is above skip threshold {{ zone_3_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(1) }}% is above {{ zone_3_moisture_skip_threshold }}%
         {% elif not (z3_interval_due | bool(false)) and not (z3_force_water | bool(false)) %}
           ⏭ Skipped — {{ z3_days_elapsed | round(1) }} days elapsed, interval is {{ zone_3_watering_interval_days }} days
         {% else %}
@@ -899,11 +939,11 @@ action:
         {% endif %}
       z3_moisture_line: >-
         {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Soil: {{ z3_moisture_val | round(1) }}%
+          Final Moisture : {{ z3_moisture_val | round(1) }}%
         {% elif zone_3_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
 
   # ════════════════════════════════════════════════════════════════
@@ -960,7 +1000,7 @@ action:
         {% elif zone_4_valve == '' %}
           ⏭ No valve configured
         {% elif z4_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(1) }}% is above skip threshold {{ zone_4_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(1) }}% is above {{ zone_4_moisture_skip_threshold }}%
         {% elif not (z4_interval_due | bool(false)) and not (z4_force_water | bool(false)) %}
           ⏭ Skipped — {{ z4_days_elapsed | round(1) }} days elapsed, interval is {{ zone_4_watering_interval_days }} days
         {% else %}
@@ -968,11 +1008,11 @@ action:
         {% endif %}
       z4_moisture_line: >-
         {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Soil: {{ z4_moisture_val | round(1) }}%
+          Final Moisture : {{ z4_moisture_val | round(1) }}%
         {% elif zone_4_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
 
   # ════════════════════════════════════════════════════════════════
@@ -1165,13 +1205,13 @@ action:
         {% endif %}
       z1_moisture_line: >-
         {% if z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Soil: {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+          Final Moisture : {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
         {% elif zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Soil: {{ z1_moisture_val | round(1) }}%
+          Final Moisture : {{ z1_moisture_val | round(1) }}%
         {% elif zone_1_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
       z2_moisture_end: >-
         {% if zone_2_moisture_sensor != '' and
@@ -1182,13 +1222,13 @@ action:
         {% endif %}
       z2_moisture_line: >-
         {% if z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Soil: {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+          Final Moisture : {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
         {% elif zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Soil: {{ z2_moisture_val | round(1) }}%
+          Final Moisture : {{ z2_moisture_val | round(1) }}%
         {% elif zone_2_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
       z3_moisture_end: >-
         {% if zone_3_moisture_sensor != '' and
@@ -1199,13 +1239,13 @@ action:
         {% endif %}
       z3_moisture_line: >-
         {% if z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Soil: {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+          Final Moisture : {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
         {% elif zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Soil: {{ z3_moisture_val | round(1) }}%
+          Final Moisture : {{ z3_moisture_val | round(1) }}%
         {% elif zone_3_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
       z4_moisture_end: >-
         {% if zone_4_moisture_sensor != '' and
@@ -1216,13 +1256,13 @@ action:
         {% endif %}
       z4_moisture_line: >-
         {% if z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Soil: {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+          Final Moisture : {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
         {% elif zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Soil: {{ z4_moisture_val | round(1) }}%
+          Final Moisture : {{ z4_moisture_val | round(1) }}%
         {% elif zone_4_moisture_sensor != '' %}
-          Soil: sensor unavailable
+          Final Moisture : sensor unavailable
         {% else %}
-          Soil: no sensor
+          Final Moisture : no sensor
         {% endif %}
 
   # ════════════════════════════════════════════════════════════════
@@ -1235,18 +1275,25 @@ action:
         📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
         🌡 Forecast: {{ today_high_temp }}°C ({{ day_type | trim }} day)
         🌧 Rain: {{ today_precipitation }} mm
+        {%- set ns = namespace(parts=[]) -%}
+        {%- if zone_1_enabled | bool(false) -%}
+        {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}
+        {%- set ns.parts = ns.parts + [z1_label + ': ' + (z1_result | trim) + '\n' + (z1_moisture_line | trim)] -%}
+        {%- endif -%}
+        {%- if zone_2_enabled | bool(false) -%}
+        {%- set z2_label = (zone_2_name | trim) or 'Zone 2' -%}
+        {%- set ns.parts = ns.parts + [z2_label + ': ' + (z2_result | trim) + '\n' + (z2_moisture_line | trim)] -%}
+        {%- endif -%}
+        {%- if zone_3_enabled | bool(false) -%}
+        {%- set z3_label = (zone_3_name | trim) or 'Zone 3' -%}
+        {%- set ns.parts = ns.parts + [z3_label + ': ' + (z3_result | trim) + '\n' + (z3_moisture_line | trim)] -%}
+        {%- endif -%}
+        {%- if zone_4_enabled | bool(false) -%}
+        {%- set z4_label = (zone_4_name | trim) or 'Zone 4' -%}
+        {%- set ns.parts = ns.parts + [z4_label + ': ' + (z4_result | trim) + '\n' + (z4_moisture_line | trim)] -%}
+        {%- endif %}
 
-        Zone 1: {{ z1_result | trim }}
-        {{ z1_moisture_line | trim }}
-
-        Zone 2: {{ z2_result | trim }}
-        {{ z2_moisture_line | trim }}
-
-        Zone 3: {{ z3_result | trim }}
-        {{ z3_moisture_line | trim }}
-
-        Zone 4: {{ z4_result | trim }}
-        {{ z4_moisture_line | trim }}
+        {{ ns.parts | join('\n\n') }}
 
   - alias: "Cycle complete — persistent notification"
     service: persistent_notification.create

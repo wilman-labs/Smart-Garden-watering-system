@@ -1277,19 +1277,19 @@ action:
         🌧 Rain: {{ today_precipitation }} mm
         {%- set ns = namespace(parts=[]) -%}
         {%- if zone_1_enabled | bool(false) -%}
-        {%- set z1_label = zone_1_name | trim if zone_1_name | trim != '' else 'Zone 1' -%}
+        {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}
         {%- set ns.parts = ns.parts + [z1_label + ': ' + (z1_result | trim) + '\n' + (z1_moisture_line | trim)] -%}
         {%- endif -%}
         {%- if zone_2_enabled | bool(false) -%}
-        {%- set z2_label = zone_2_name | trim if zone_2_name | trim != '' else 'Zone 2' -%}
+        {%- set z2_label = (zone_2_name | trim) or 'Zone 2' -%}
         {%- set ns.parts = ns.parts + [z2_label + ': ' + (z2_result | trim) + '\n' + (z2_moisture_line | trim)] -%}
         {%- endif -%}
         {%- if zone_3_enabled | bool(false) -%}
-        {%- set z3_label = zone_3_name | trim if zone_3_name | trim != '' else 'Zone 3' -%}
+        {%- set z3_label = (zone_3_name | trim) or 'Zone 3' -%}
         {%- set ns.parts = ns.parts + [z3_label + ': ' + (z3_result | trim) + '\n' + (z3_moisture_line | trim)] -%}
         {%- endif -%}
         {%- if zone_4_enabled | bool(false) -%}
-        {%- set z4_label = zone_4_name | trim if zone_4_name | trim != '' else 'Zone 4' -%}
+        {%- set z4_label = (zone_4_name | trim) or 'Zone 4' -%}
         {%- set ns.parts = ns.parts + [z4_label + ': ' + (z4_result | trim) + '\n' + (z4_moisture_line | trim)] -%}
         {%- endif %}
 

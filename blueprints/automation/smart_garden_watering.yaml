@@ -793,15 +793,15 @@ action:
         {% elif zone_1_valve == '' %}
           ⏭ No valve configured
         {% elif z1_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(1) }}% is above {{ zone_1_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(0) | int }}% is above {{ zone_1_moisture_skip_threshold }}%
         {% elif not (z1_interval_due | bool(false)) and not (z1_force_water | bool(false)) %}
-          ⏭ Skipped — {{ z1_days_elapsed | round(1) }} days elapsed, interval is {{ zone_1_watering_interval_days }} days
+          ⏭ Skipped — {{ z1_days_elapsed | round(0) | int }} days into a {{ zone_1_watering_interval_days }} day cycle
         {% else %}
           💧 Watered {{ z1_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z1_moisture_line: >-
         {% if zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Final Moisture : {{ z1_moisture_val | round(1) }}%
+          Final Moisture : {{ z1_moisture_val | round(0) | int }}%
         {% elif zone_1_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -862,15 +862,15 @@ action:
         {% elif zone_2_valve == '' %}
           ⏭ No valve configured
         {% elif z2_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(1) }}% is above {{ zone_2_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(0) | int }}% is above {{ zone_2_moisture_skip_threshold }}%
         {% elif not (z2_interval_due | bool(false)) and not (z2_force_water | bool(false)) %}
-          ⏭ Skipped — {{ z2_days_elapsed | round(1) }} days elapsed, interval is {{ zone_2_watering_interval_days }} days
+          ⏭ Skipped — {{ z2_days_elapsed | round(0) | int }} days into a {{ zone_2_watering_interval_days }} day cycle
         {% else %}
           💧 Watered {{ z2_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z2_moisture_line: >-
         {% if zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Final Moisture : {{ z2_moisture_val | round(1) }}%
+          Final Moisture : {{ z2_moisture_val | round(0) | int }}%
         {% elif zone_2_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -931,15 +931,15 @@ action:
         {% elif zone_3_valve == '' %}
           ⏭ No valve configured
         {% elif z3_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(1) }}% is above {{ zone_3_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(0) | int }}% is above {{ zone_3_moisture_skip_threshold }}%
         {% elif not (z3_interval_due | bool(false)) and not (z3_force_water | bool(false)) %}
-          ⏭ Skipped — {{ z3_days_elapsed | round(1) }} days elapsed, interval is {{ zone_3_watering_interval_days }} days
+          ⏭ Skipped — {{ z3_days_elapsed | round(0) | int }} days into a {{ zone_3_watering_interval_days }} day cycle
         {% else %}
           💧 Watered {{ z3_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z3_moisture_line: >-
         {% if zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Final Moisture : {{ z3_moisture_val | round(1) }}%
+          Final Moisture : {{ z3_moisture_val | round(0) | int }}%
         {% elif zone_3_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -1000,15 +1000,15 @@ action:
         {% elif zone_4_valve == '' %}
           ⏭ No valve configured
         {% elif z4_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(1) }}% is above {{ zone_4_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(0) | int }}% is above {{ zone_4_moisture_skip_threshold }}%
         {% elif not (z4_interval_due | bool(false)) and not (z4_force_water | bool(false)) %}
-          ⏭ Skipped — {{ z4_days_elapsed | round(1) }} days elapsed, interval is {{ zone_4_watering_interval_days }} days
+          ⏭ Skipped — {{ z4_days_elapsed | round(0) | int }} days into a {{ zone_4_watering_interval_days }} day cycle
         {% else %}
           💧 Watered {{ z4_duration }} min ({{ day_type | trim }} day)
         {% endif %}
       z4_moisture_line: >-
         {% if zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Final Moisture : {{ z4_moisture_val | round(1) }}%
+          Final Moisture : {{ z4_moisture_val | round(0) | int }}%
         {% elif zone_4_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -1204,10 +1204,11 @@ action:
           -1
         {% endif %}
       z1_moisture_line: >-
-        {% if z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Final Moisture : {{ z1_moisture_val | round(1) }}% → {{ z1_moisture_end | round(1) }}%
+        {% if z1_skip_moisture | bool(false) %}
+        {% elif z1_should_water and zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
+          Final Moisture : {{ z1_moisture_val | round(0) | int }}% → {{ z1_moisture_end | round(0) | int }}%
         {% elif zone_1_moisture_sensor != '' and z1_moisture_val >= 0 %}
-          Final Moisture : {{ z1_moisture_val | round(1) }}%
+          Final Moisture : {{ z1_moisture_val | round(0) | int }}%
         {% elif zone_1_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -1221,10 +1222,11 @@ action:
           -1
         {% endif %}
       z2_moisture_line: >-
-        {% if z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Final Moisture : {{ z2_moisture_val | round(1) }}% → {{ z2_moisture_end | round(1) }}%
+        {% if z2_skip_moisture | bool(false) %}
+        {% elif z2_should_water and zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
+          Final Moisture : {{ z2_moisture_val | round(0) | int }}% → {{ z2_moisture_end | round(0) | int }}%
         {% elif zone_2_moisture_sensor != '' and z2_moisture_val >= 0 %}
-          Final Moisture : {{ z2_moisture_val | round(1) }}%
+          Final Moisture : {{ z2_moisture_val | round(0) | int }}%
         {% elif zone_2_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -1238,10 +1240,11 @@ action:
           -1
         {% endif %}
       z3_moisture_line: >-
-        {% if z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Final Moisture : {{ z3_moisture_val | round(1) }}% → {{ z3_moisture_end | round(1) }}%
+        {% if z3_skip_moisture | bool(false) %}
+        {% elif z3_should_water and zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
+          Final Moisture : {{ z3_moisture_val | round(0) | int }}% → {{ z3_moisture_end | round(0) | int }}%
         {% elif zone_3_moisture_sensor != '' and z3_moisture_val >= 0 %}
-          Final Moisture : {{ z3_moisture_val | round(1) }}%
+          Final Moisture : {{ z3_moisture_val | round(0) | int }}%
         {% elif zone_3_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -1255,10 +1258,11 @@ action:
           -1
         {% endif %}
       z4_moisture_line: >-
-        {% if z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Final Moisture : {{ z4_moisture_val | round(1) }}% → {{ z4_moisture_end | round(1) }}%
+        {% if z4_skip_moisture | bool(false) %}
+        {% elif z4_should_water and zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
+          Final Moisture : {{ z4_moisture_val | round(0) | int }}% → {{ z4_moisture_end | round(0) | int }}%
         {% elif zone_4_moisture_sensor != '' and z4_moisture_val >= 0 %}
-          Final Moisture : {{ z4_moisture_val | round(1) }}%
+          Final Moisture : {{ z4_moisture_val | round(0) | int }}%
         {% elif zone_4_moisture_sensor != '' %}
           Final Moisture : sensor unavailable
         {% else %}
@@ -1278,19 +1282,23 @@ action:
         {%- set ns = namespace(parts=[]) -%}
         {%- if zone_1_enabled | bool(false) -%}
         {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}
-        {%- set ns.parts = ns.parts + [z1_label + ': ' + (z1_result | trim) + '\n' + (z1_moisture_line | trim)] -%}
+        {%- set z1_ml = z1_moisture_line | trim -%}
+        {%- set ns.parts = ns.parts + [z1_label + ': ' + (z1_result | trim) + ('\n' + z1_ml if z1_ml else '')] -%}
         {%- endif -%}
         {%- if zone_2_enabled | bool(false) -%}
         {%- set z2_label = (zone_2_name | trim) or 'Zone 2' -%}
-        {%- set ns.parts = ns.parts + [z2_label + ': ' + (z2_result | trim) + '\n' + (z2_moisture_line | trim)] -%}
+        {%- set z2_ml = z2_moisture_line | trim -%}
+        {%- set ns.parts = ns.parts + [z2_label + ': ' + (z2_result | trim) + ('\n' + z2_ml if z2_ml else '')] -%}
         {%- endif -%}
         {%- if zone_3_enabled | bool(false) -%}
         {%- set z3_label = (zone_3_name | trim) or 'Zone 3' -%}
-        {%- set ns.parts = ns.parts + [z3_label + ': ' + (z3_result | trim) + '\n' + (z3_moisture_line | trim)] -%}
+        {%- set z3_ml = z3_moisture_line | trim -%}
+        {%- set ns.parts = ns.parts + [z3_label + ': ' + (z3_result | trim) + ('\n' + z3_ml if z3_ml else '')] -%}
         {%- endif -%}
         {%- if zone_4_enabled | bool(false) -%}
         {%- set z4_label = (zone_4_name | trim) or 'Zone 4' -%}
-        {%- set ns.parts = ns.parts + [z4_label + ': ' + (z4_result | trim) + '\n' + (z4_moisture_line | trim)] -%}
+        {%- set z4_ml = z4_moisture_line | trim -%}
+        {%- set ns.parts = ns.parts + [z4_label + ': ' + (z4_result | trim) + ('\n' + z4_ml if z4_ml else '')] -%}
         {%- endif %}
 
         {{ ns.parts | join('\n\n') }}

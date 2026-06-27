@@ -212,6 +212,7 @@ blueprint:
           description: >-
             Skip Zone 1 if soil moisture is ABOVE this value.
             Set to 0 to disable.
+            Ignored when a dashboard entity is set below.
           default: 70
           selector:
             number:
@@ -226,6 +227,7 @@ blueprint:
           description: >-
             Immediately water Zone 1 (ignoring the interval) when soil moisture
             drops BELOW this value. Set to 0 to disable.
+            Ignored when a dashboard entity is set below.
           default: 30
           selector:
             number:
@@ -234,6 +236,30 @@ blueprint:
               step: 1
               unit_of_measurement: "%"
               mode: slider
+
+        zone_1_skip_entity:
+          name: "Zone 1 — Skip Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's green (skip) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_1_water_entity:
+          name: "Zone 1 — Force Water Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's red (force-water) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
 
         zone_1_cool_duration:
           name: "Zone 1 — Cool Day Duration (minutes)"
@@ -331,6 +357,9 @@ blueprint:
         zone_2_moisture_skip_threshold:
           name: "Zone 2 — Skip if Moisture Above (%)"
           default: 70
+          description: >-
+            Skip Zone 2 if soil moisture is ABOVE this value.
+            Ignored when a dashboard entity is set below.
           selector:
             number:
               min: 0
@@ -342,6 +371,10 @@ blueprint:
         zone_2_moisture_water_threshold:
           name: "Zone 2 — Force Water if Moisture Below (%)"
           default: 30
+          description: >-
+            Immediately water Zone 2 (ignoring the interval) when soil moisture
+            drops BELOW this value. Set to 0 to disable.
+            Ignored when a dashboard entity is set below.
           selector:
             number:
               min: 0
@@ -349,6 +382,30 @@ blueprint:
               step: 1
               unit_of_measurement: "%"
               mode: slider
+
+        zone_2_skip_entity:
+          name: "Zone 2 — Skip Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's green (skip) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_2_water_entity:
+          name: "Zone 2 — Force Water Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's red (force-water) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
 
         zone_2_cool_duration:
           name: "Zone 2 — Cool Day Duration (minutes)"
@@ -446,6 +503,9 @@ blueprint:
         zone_3_moisture_skip_threshold:
           name: "Zone 3 — Skip if Moisture Above (%)"
           default: 70
+          description: >-
+            Skip Zone 3 if soil moisture is ABOVE this value.
+            Ignored when a dashboard entity is set below.
           selector:
             number:
               min: 0
@@ -457,6 +517,10 @@ blueprint:
         zone_3_moisture_water_threshold:
           name: "Zone 3 — Force Water if Moisture Below (%)"
           default: 30
+          description: >-
+            Immediately water Zone 3 (ignoring the interval) when soil moisture
+            drops BELOW this value. Set to 0 to disable.
+            Ignored when a dashboard entity is set below.
           selector:
             number:
               min: 0
@@ -464,6 +528,30 @@ blueprint:
               step: 1
               unit_of_measurement: "%"
               mode: slider
+
+        zone_3_skip_entity:
+          name: "Zone 3 — Skip Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's green (skip) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_3_water_entity:
+          name: "Zone 3 — Force Water Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's red (force-water) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
 
         zone_3_cool_duration:
           name: "Zone 3 — Cool Day Duration (minutes)"
@@ -561,6 +649,9 @@ blueprint:
         zone_4_moisture_skip_threshold:
           name: "Zone 4 — Skip if Moisture Above (%)"
           default: 70
+          description: >-
+            Skip Zone 4 if soil moisture is ABOVE this value.
+            Ignored when a dashboard entity is set below.
           selector:
             number:
               min: 0
@@ -572,6 +663,10 @@ blueprint:
         zone_4_moisture_water_threshold:
           name: "Zone 4 — Force Water if Moisture Below (%)"
           default: 30
+          description: >-
+            Immediately water Zone 4 (ignoring the interval) when soil moisture
+            drops BELOW this value. Set to 0 to disable.
+            Ignored when a dashboard entity is set below.
           selector:
             number:
               min: 0
@@ -579,6 +674,30 @@ blueprint:
               step: 1
               unit_of_measurement: "%"
               mode: slider
+
+        zone_4_skip_entity:
+          name: "Zone 4 — Skip Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's green (skip) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_4_water_entity:
+          name: "Zone 4 — Force Water Threshold Entity (optional, dashboard slider)"
+          description: >-
+            input_number helper whose live value replaces the static threshold
+            above. Link this to the dashboard slider so the Zone Controls view
+            controls this zone's red (force-water) boundary in real time.
+            Leave empty to use the static value above.
+          default: ""
+          selector:
+            entity:
+              domain: input_number
 
         zone_4_cool_duration:
           name: "Zone 4 — Cool Day Duration (minutes)"
@@ -639,6 +758,8 @@ variables:
   zone_1_moisture_sensor: !input zone_1_moisture_sensor
   zone_1_moisture_skip_threshold: !input zone_1_moisture_skip_threshold
   zone_1_moisture_water_threshold: !input zone_1_moisture_water_threshold
+  zone_1_skip_entity: !input zone_1_skip_entity
+  zone_1_water_entity: !input zone_1_water_entity
   zone_1_cool_duration: !input zone_1_cool_duration
   zone_1_warm_duration: !input zone_1_warm_duration
   zone_1_hot_duration: !input zone_1_hot_duration
@@ -651,6 +772,8 @@ variables:
   zone_2_moisture_sensor: !input zone_2_moisture_sensor
   zone_2_moisture_skip_threshold: !input zone_2_moisture_skip_threshold
   zone_2_moisture_water_threshold: !input zone_2_moisture_water_threshold
+  zone_2_skip_entity: !input zone_2_skip_entity
+  zone_2_water_entity: !input zone_2_water_entity
   zone_2_cool_duration: !input zone_2_cool_duration
   zone_2_warm_duration: !input zone_2_warm_duration
   zone_2_hot_duration: !input zone_2_hot_duration
@@ -663,6 +786,8 @@ variables:
   zone_3_moisture_sensor: !input zone_3_moisture_sensor
   zone_3_moisture_skip_threshold: !input zone_3_moisture_skip_threshold
   zone_3_moisture_water_threshold: !input zone_3_moisture_water_threshold
+  zone_3_skip_entity: !input zone_3_skip_entity
+  zone_3_water_entity: !input zone_3_water_entity
   zone_3_cool_duration: !input zone_3_cool_duration
   zone_3_warm_duration: !input zone_3_warm_duration
   zone_3_hot_duration: !input zone_3_hot_duration
@@ -675,6 +800,8 @@ variables:
   zone_4_moisture_sensor: !input zone_4_moisture_sensor
   zone_4_moisture_skip_threshold: !input zone_4_moisture_skip_threshold
   zone_4_moisture_water_threshold: !input zone_4_moisture_water_threshold
+  zone_4_skip_entity: !input zone_4_skip_entity
+  zone_4_water_entity: !input zone_4_water_entity
   zone_4_cool_duration: !input zone_4_cool_duration
   zone_4_warm_duration: !input zone_4_warm_duration
   zone_4_hot_duration: !input zone_4_hot_duration
@@ -760,15 +887,25 @@ action:
           999
         {% endif %}
       z1_interval_due: "{{ z1_days_elapsed >= (zone_1_watering_interval_days | int(2)) }}"
+      z1_eff_skip_thr: >-
+        {{ states(zone_1_skip_entity) | float(zone_1_moisture_skip_threshold | float(70))
+           if (zone_1_skip_entity != '' and
+               states(zone_1_skip_entity) not in ['unknown', 'unavailable'])
+           else zone_1_moisture_skip_threshold | float(70) }}
+      z1_eff_water_thr: >-
+        {{ states(zone_1_water_entity) | float(zone_1_moisture_water_threshold | float(30))
+           if (zone_1_water_entity != '' and
+               states(zone_1_water_entity) not in ['unknown', 'unavailable'])
+           else zone_1_moisture_water_threshold | float(30) }}
       z1_force_water: >-
-        {% set thr = zone_1_moisture_water_threshold | int(0) %}
+        {% set thr = z1_eff_water_thr | int(0) %}
         {% if z1_moisture_val >= 0 and thr > 0 %}
           {{ z1_moisture_val < thr }}
         {% else %}
           false
         {% endif %}
       z1_skip_moisture: >-
-        {% set thr = zone_1_moisture_skip_threshold | int(0) %}
+        {% set thr = z1_eff_skip_thr | int(0) %}
         {% if z1_moisture_val >= 0 and thr > 0 %}
           {{ z1_moisture_val > thr }}
         {% else %}
@@ -793,7 +930,7 @@ action:
         {% elif zone_1_valve == '' %}
           ⏭ No valve configured
         {% elif z1_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(0) | int }}% is above {{ zone_1_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z1_moisture_val | round(0) | int }}% is above {{ z1_eff_skip_thr | round(0) | int }}%
         {% elif not (z1_interval_due | bool(false)) and not (z1_force_water | bool(false)) %}
           ⏭ Skipped — {{ z1_days_elapsed | round(0) | int }} days into a {{ zone_1_watering_interval_days }} day cycle
         {% else %}
@@ -829,15 +966,25 @@ action:
           999
         {% endif %}
       z2_interval_due: "{{ z2_days_elapsed >= (zone_2_watering_interval_days | int(2)) }}"
+      z2_eff_skip_thr: >-
+        {{ states(zone_2_skip_entity) | float(zone_2_moisture_skip_threshold | float(70))
+           if (zone_2_skip_entity != '' and
+               states(zone_2_skip_entity) not in ['unknown', 'unavailable'])
+           else zone_2_moisture_skip_threshold | float(70) }}
+      z2_eff_water_thr: >-
+        {{ states(zone_2_water_entity) | float(zone_2_moisture_water_threshold | float(30))
+           if (zone_2_water_entity != '' and
+               states(zone_2_water_entity) not in ['unknown', 'unavailable'])
+           else zone_2_moisture_water_threshold | float(30) }}
       z2_force_water: >-
-        {% set thr = zone_2_moisture_water_threshold | int(0) %}
+        {% set thr = z2_eff_water_thr | int(0) %}
         {% if z2_moisture_val >= 0 and thr > 0 %}
           {{ z2_moisture_val < thr }}
         {% else %}
           false
         {% endif %}
       z2_skip_moisture: >-
-        {% set thr = zone_2_moisture_skip_threshold | int(0) %}
+        {% set thr = z2_eff_skip_thr | int(0) %}
         {% if z2_moisture_val >= 0 and thr > 0 %}
           {{ z2_moisture_val > thr }}
         {% else %}
@@ -862,7 +1009,7 @@ action:
         {% elif zone_2_valve == '' %}
           ⏭ No valve configured
         {% elif z2_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(0) | int }}% is above {{ zone_2_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z2_moisture_val | round(0) | int }}% is above {{ z2_eff_skip_thr | round(0) | int }}%
         {% elif not (z2_interval_due | bool(false)) and not (z2_force_water | bool(false)) %}
           ⏭ Skipped — {{ z2_days_elapsed | round(0) | int }} days into a {{ zone_2_watering_interval_days }} day cycle
         {% else %}
@@ -898,15 +1045,25 @@ action:
           999
         {% endif %}
       z3_interval_due: "{{ z3_days_elapsed >= (zone_3_watering_interval_days | int(2)) }}"
+      z3_eff_skip_thr: >-
+        {{ states(zone_3_skip_entity) | float(zone_3_moisture_skip_threshold | float(70))
+           if (zone_3_skip_entity != '' and
+               states(zone_3_skip_entity) not in ['unknown', 'unavailable'])
+           else zone_3_moisture_skip_threshold | float(70) }}
+      z3_eff_water_thr: >-
+        {{ states(zone_3_water_entity) | float(zone_3_moisture_water_threshold | float(30))
+           if (zone_3_water_entity != '' and
+               states(zone_3_water_entity) not in ['unknown', 'unavailable'])
+           else zone_3_moisture_water_threshold | float(30) }}
       z3_force_water: >-
-        {% set thr = zone_3_moisture_water_threshold | int(0) %}
+        {% set thr = z3_eff_water_thr | int(0) %}
         {% if z3_moisture_val >= 0 and thr > 0 %}
           {{ z3_moisture_val < thr }}
         {% else %}
           false
         {% endif %}
       z3_skip_moisture: >-
-        {% set thr = zone_3_moisture_skip_threshold | int(0) %}
+        {% set thr = z3_eff_skip_thr | int(0) %}
         {% if z3_moisture_val >= 0 and thr > 0 %}
           {{ z3_moisture_val > thr }}
         {% else %}
@@ -931,7 +1088,7 @@ action:
         {% elif zone_3_valve == '' %}
           ⏭ No valve configured
         {% elif z3_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(0) | int }}% is above {{ zone_3_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z3_moisture_val | round(0) | int }}% is above {{ z3_eff_skip_thr | round(0) | int }}%
         {% elif not (z3_interval_due | bool(false)) and not (z3_force_water | bool(false)) %}
           ⏭ Skipped — {{ z3_days_elapsed | round(0) | int }} days into a {{ zone_3_watering_interval_days }} day cycle
         {% else %}
@@ -967,15 +1124,25 @@ action:
           999
         {% endif %}
       z4_interval_due: "{{ z4_days_elapsed >= (zone_4_watering_interval_days | int(2)) }}"
+      z4_eff_skip_thr: >-
+        {{ states(zone_4_skip_entity) | float(zone_4_moisture_skip_threshold | float(70))
+           if (zone_4_skip_entity != '' and
+               states(zone_4_skip_entity) not in ['unknown', 'unavailable'])
+           else zone_4_moisture_skip_threshold | float(70) }}
+      z4_eff_water_thr: >-
+        {{ states(zone_4_water_entity) | float(zone_4_moisture_water_threshold | float(30))
+           if (zone_4_water_entity != '' and
+               states(zone_4_water_entity) not in ['unknown', 'unavailable'])
+           else zone_4_moisture_water_threshold | float(30) }}
       z4_force_water: >-
-        {% set thr = zone_4_moisture_water_threshold | int(0) %}
+        {% set thr = z4_eff_water_thr | int(0) %}
         {% if z4_moisture_val >= 0 and thr > 0 %}
           {{ z4_moisture_val < thr }}
         {% else %}
           false
         {% endif %}
       z4_skip_moisture: >-
-        {% set thr = zone_4_moisture_skip_threshold | int(0) %}
+        {% set thr = z4_eff_skip_thr | int(0) %}
         {% if z4_moisture_val >= 0 and thr > 0 %}
           {{ z4_moisture_val > thr }}
         {% else %}
@@ -1000,7 +1167,7 @@ action:
         {% elif zone_4_valve == '' %}
           ⏭ No valve configured
         {% elif z4_skip_moisture | bool(false) %}
-          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(0) | int }}% is above {{ zone_4_moisture_skip_threshold }}%
+          ⏭ Skipped — soil moisture {{ z4_moisture_val | round(0) | int }}% is above {{ z4_eff_skip_thr | round(0) | int }}%
         {% elif not (z4_interval_due | bool(false)) and not (z4_force_water | bool(false)) %}
           ⏭ Skipped — {{ z4_days_elapsed | round(0) | int }} days into a {{ zone_4_watering_interval_days }} day cycle
         {% else %}

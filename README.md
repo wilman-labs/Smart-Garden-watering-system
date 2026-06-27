@@ -79,11 +79,79 @@ automation from this blueprint.
 | Valve | — | Valve/switch entity for this zone |
 | Last Watered Tracker | *(empty)* | `input_datetime` helper to track last run |
 | Soil Moisture Sensor | *(empty)* | Optional moisture sensor |
-| Skip if Moisture Above | 70 % | Skip zone if soil is already wet |
-| Force Water if Moisture Below | 30 % | Water immediately if soil is too dry |
+| Skip if Moisture Above | 70 % | Skip zone if soil is already wet (static fallback) |
+| Force Water if Moisture Below | 30 % | Water immediately if soil is too dry (static fallback) |
+| Skip Threshold Entity | *(empty)* | `input_number` helper wired to the dashboard slider — overrides the static value above |
+| Force Water Threshold Entity | *(empty)* | `input_number` helper wired to the dashboard slider — overrides the static value above |
 | Cool Day Duration | 300 s | Valve open time on a cool day |
 | Warm Day Duration | 600 s | Valve open time on a warm day |
 | Hot Day Duration | 900 s | Valve open time on a hot day |
+
+---
+
+## Zone Controls Dashboard
+
+The file `dashboards/garden_dashboard.yaml` provides two views:
+
+| View | Contents |
+|---|---|
+| **Overview** | All existing moisture gauges, temperature & humidity graphs, and Last Watered cards |
+| **Zone Controls** | Per-zone moisture gauge + two threshold sliders (skip / force-water) |
+
+### How it works
+
+Each slider controls an `input_number` helper.  The blueprint reads the live
+value from that helper at run-time, so dragging a slider instantly updates the
+threshold used at the **next sunrise trigger** — no automation edit needed.
+
+- 🟢 **Skip threshold (upper)** — drag upward to let the zone run in wetter
+  soil; drag downward to skip earlier.
+- 🔴 **Force-water threshold (lower)** — drag upward to start emergency
+  watering sooner; drag downward to tolerate drier soil.
+
+### Step 1 — Create `input_number` helpers
+
+Go to **Settings → Helpers → Add Helper → Number** and create the following
+eight helpers (one skip + one force-water per zone).  Use these exact entity
+IDs:
+
+| Entity ID | Name | Min | Max | Step | Unit | Default |
+|---|---|---|---|---|---|---|
+| `input_number.zone_1_skip_threshold` | Zone 1 — Skip if Above | 0 | 100 | 1 | % | 65 |
+| `input_number.zone_1_water_threshold` | Zone 1 — Force Water if Below | 0 | 100 | 1 | % | 30 |
+| `input_number.zone_2_skip_threshold` | Zone 2 — Skip if Above | 0 | 100 | 1 | % | 65 |
+| `input_number.zone_2_water_threshold` | Zone 2 — Force Water if Below | 0 | 100 | 1 | % | 30 |
+| `input_number.zone_3_skip_threshold` | Zone 3 — Skip if Above | 0 | 100 | 1 | % | 65 |
+| `input_number.zone_3_water_threshold` | Zone 3 — Force Water if Below | 0 | 100 | 1 | % | 35 |
+| `input_number.zone_4_skip_threshold` | Zone 4 — Skip if Above | 0 | 100 | 1 | % | 65 |
+| `input_number.zone_4_water_threshold` | Zone 4 — Force Water if Below | 0 | 100 | 1 | % | 30 |
+
+### Step 2 — Wire helpers into the blueprint automation
+
+Open your automation, scroll to each zone's section, and set:
+
+- **Skip Threshold Entity** → the zone's `input_number.zoneX_skip_threshold`
+- **Force Water Threshold Entity** → the zone's `input_number.zoneX_water_threshold`
+
+Leave the **static** threshold numbers in place — they act as safe fallbacks if
+the helpers are ever unavailable.
+
+### Step 3 — Add the dashboard
+
+1. Copy `dashboards/garden_dashboard.yaml` to your HA config, for example:
+   ```
+   config/dashboards/garden_dashboard.yaml
+   ```
+2. In HA go to **Settings → Dashboards → Add Dashboard**.  
+   Choose **YAML mode** and point it at the file above, **or** use
+   **Edit Dashboard → Raw configuration editor** and paste the file's contents.
+
+> **Tip — gauge colour boundaries:** The native HA gauge card uses fixed colour
+> boundaries defined in YAML (e.g. `green: 65`).  Those colours are visual
+> references only; the sliders and `input_number` helpers are the live source
+> of truth for the automation.  If you regularly operate outside the default
+> ranges, update the `severity:` values in `dashboards/garden_dashboard.yaml`
+> to match your preferred thresholds.
 
 ---
 

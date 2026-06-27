@@ -1,0 +1,325 @@
+views:
+  # ─────────────────────────────────────────────────────────────────
+  # View 1 — Garden Overview (existing dials & graphs, unchanged)
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Overview
+    icon: mdi:flower
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Moist
+            heading_style: title
+            icon: mdi:water
+          - type: gauge
+            entity: sensor.hobeian_zg_303z_humidity
+            needle: true
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - type: gauge
+            needle: true
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+            entity: sensor.arteco_zs_304z_humidity
+          - type: gauge
+            entity: sensor.tomatoes_humidity
+            needle: true
+            severity:
+              green: 65
+              yellow: 35
+              red: 0
+          - type: gauge
+            entity: sensor.moist_4_humidity
+            needle: true
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - type: gauge
+            entity: sensor.moist_5_humidity
+            needle: true
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - chart_type: line
+            period: 5minute
+            type: statistics-graph
+            entities:
+              - sensor.tomatoes_humidity
+              - sensor.hobeian_zg_303z_humidity
+              - sensor.arteco_zs_304z_humidity
+              - sensor.moist_4_humidity
+              - sensor.moist_5_humidity
+            stat_types:
+              - mean
+            expand_legend: false
+            logarithmic_scale: false
+            hide_legend: false
+            days_to_show: 1
+          - chart_type: line
+            period: 5minute
+            type: statistics-graph
+            entities:
+              - sensor.tomatoes_humidity
+              - sensor.hobeian_zg_303z_humidity
+              - sensor.arteco_zs_304z_humidity
+              - sensor.moist_4_humidity
+              - sensor.moist_5_humidity
+            stat_types:
+              - mean
+            expand_legend: false
+            logarithmic_scale: false
+            hide_legend: false
+            days_to_show: 7
+      - type: grid
+        cards:
+          - chart_type: line
+            period: 5minute
+            type: statistics-graph
+            entities:
+              - sensor.tomatoes_temperature
+              - sensor.hobeian_zg_303z_temperature
+              - sensor.arteco_zs_304z_temperature
+              - sensor.moist_4_temperature
+              - sensor.moist_5_temperature
+            stat_types:
+              - mean
+            grid_options:
+              rows: auto
+            expand_legend: false
+            hide_legend: false
+            days_to_show: 1
+      - type: grid
+        cards:
+          - chart_type: line
+            period: 5minute
+            type: statistics-graph
+            entities:
+              - sensor.tomatoes_temperature
+              - sensor.hobeian_zg_303z_temperature
+              - sensor.arteco_zs_304z_temperature
+              - sensor.moist_4_temperature
+              - sensor.moist_5_temperature
+            stat_types:
+              - mean
+            days_to_show: 7
+            grid_options:
+              rows: auto
+            expand_legend: false
+            hide_legend: false
+      - type: grid
+        cards:
+          - type: heading
+            heading: New section
+          - type: entities
+            title: Last Watered
+            entities:
+              - entity: input_datetime.zone_1_last_watered
+                name: Zone 1
+              - entity: input_datetime.zone_2_last_watered
+                name: Zone 2
+              - entity: input_datetime.zone_3_last_watered
+                name: Zone 3
+              - entity: input_datetime.zone_4_last_watered
+                name: Zone 4
+            grid_options:
+              columns: full
+              rows: auto
+        column_span: 2
+    header:
+      card:
+        type: markdown
+        content: |-
+          # Hello {{ user }}
+          See how the garden is doing 🍃 🍅
+
+  # ─────────────────────────────────────────────────────────────────
+  # View 2 — Zone Controls
+  #
+  # Each zone shows the live moisture gauge alongside two sliders:
+  #   • ⬆ Skip if above  — green boundary (🟢)
+  #     Automation skips watering when moisture is AT OR ABOVE this value.
+  #   • ⬇ Force water if below — red boundary (🔴)
+  #     Automation waters immediately (ignoring the interval) when
+  #     moisture drops BELOW this value.
+  #
+  # Pre-requisites — create these helpers in HA before using this view:
+  #   Settings → Helpers → Add Helper → Number (input_number)
+  #   See README.md § Zone Controls Dashboard for the full list.
+  # ─────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Zone Controls
+    icon: mdi:tune-vertical
+    sections:
+
+      # ── Header / legend ─────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zone Moisture Thresholds
+            heading_style: title
+            icon: mdi:tune-variant
+          - type: markdown
+            content: >-
+              Adjust the sliders below each gauge to set the watering boundaries
+              for each zone.
+
+
+              🟢 **Skip threshold (upper)** — automation skips watering when
+              moisture is at or above this value (soil already wet).
+
+
+              🔴 **Force-water threshold (lower)** — automation waters
+              immediately when moisture drops below this value, regardless of
+              the scheduled interval (soil critically dry).
+
+
+              Changes take effect at the **next sunrise trigger** — no restart
+              needed.
+            grid_options:
+              columns: full
+              rows: auto
+
+      # ── Zone 1 — Hobeian ────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zone 1 — Hobeian
+            heading_style: subtitle
+            icon: mdi:sprinkler-variant
+          - type: gauge
+            entity: sensor.hobeian_zg_303z_humidity
+            name: Zone 1 Moisture
+            needle: true
+            min: 0
+            max: 100
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - type: entities
+            title: Zone 1 Thresholds
+            entities:
+              - entity: input_number.zone_1_skip_threshold
+                name: "⬆ Skip if above (🟢 Green boundary)"
+              - entity: input_number.zone_1_water_threshold
+                name: "⬇ Force water if below (🔴 Red boundary)"
+            grid_options:
+              columns: full
+              rows: auto
+
+      # ── Zone 2 — Arteco ─────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zone 2 — Arteco
+            heading_style: subtitle
+            icon: mdi:sprinkler-variant
+          - type: gauge
+            entity: sensor.arteco_zs_304z_humidity
+            name: Zone 2 Moisture
+            needle: true
+            min: 0
+            max: 100
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - type: entities
+            title: Zone 2 Thresholds
+            entities:
+              - entity: input_number.zone_2_skip_threshold
+                name: "⬆ Skip if above (🟢 Green boundary)"
+              - entity: input_number.zone_2_water_threshold
+                name: "⬇ Force water if below (🔴 Red boundary)"
+            grid_options:
+              columns: full
+              rows: auto
+
+      # ── Zone 3 — Tomatoes ───────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zone 3 — Tomatoes
+            heading_style: subtitle
+            icon: mdi:sprinkler-variant
+          - type: gauge
+            entity: sensor.tomatoes_humidity
+            name: Zone 3 Moisture
+            needle: true
+            min: 0
+            max: 100
+            severity:
+              green: 65
+              yellow: 35
+              red: 0
+          - type: entities
+            title: Zone 3 Thresholds
+            entities:
+              - entity: input_number.zone_3_skip_threshold
+                name: "⬆ Skip if above (🟢 Green boundary)"
+              - entity: input_number.zone_3_water_threshold
+                name: "⬇ Force water if below (🔴 Red boundary)"
+            grid_options:
+              columns: full
+              rows: auto
+
+      # ── Zone 4 ──────────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zone 4
+            heading_style: subtitle
+            icon: mdi:sprinkler-variant
+          - type: gauge
+            entity: sensor.moist_4_humidity
+            name: Zone 4 Moisture
+            needle: true
+            min: 0
+            max: 100
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - type: entities
+            title: Zone 4 Thresholds
+            entities:
+              - entity: input_number.zone_4_skip_threshold
+                name: "⬆ Skip if above (🟢 Green boundary)"
+              - entity: input_number.zone_4_water_threshold
+                name: "⬇ Force water if below (🔴 Red boundary)"
+            grid_options:
+              columns: full
+              rows: auto
+
+      # ── Zone 5 — Monitor only (no watering zone) ────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zone 5 — Monitor Only
+            heading_style: subtitle
+            icon: mdi:eye-outline
+          - type: gauge
+            entity: sensor.moist_5_humidity
+            name: Zone 5 Moisture
+            needle: true
+            min: 0
+            max: 100
+            severity:
+              green: 65
+              yellow: 30
+              red: 0
+          - type: markdown
+            content: >-
+              Zone 5 is a **monitoring sensor only** — it is not connected to a
+              watering zone in the current automation. No threshold controls are
+              needed here.
+            grid_options:
+              columns: full
+              rows: auto

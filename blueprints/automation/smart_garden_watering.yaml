@@ -1195,6 +1195,7 @@ action:
             {% endif %}
           z1_eve_moisture_line: >-
             {% if z1_eve_moisture_wet | bool(false) %}
+              Moisture : {{ z1_eve_moisture_val | round(0) | int }}% (above skip threshold)
             {% elif z1_eve_should_water and zone_1_moisture_sensor != '' and z1_eve_moisture_val >= 0 %}
               Moisture : {{ z1_eve_moisture_val | round(0) | int }}% → {{ z1_eve_moisture_end | round(0) | int }}%
             {% elif zone_1_moisture_sensor != '' and z1_eve_moisture_val >= 0 %}
@@ -1213,6 +1214,7 @@ action:
             {% endif %}
           z2_eve_moisture_line: >-
             {% if z2_eve_moisture_wet | bool(false) %}
+              Moisture : {{ z2_eve_moisture_val | round(0) | int }}% (above skip threshold)
             {% elif z2_eve_should_water and zone_2_moisture_sensor != '' and z2_eve_moisture_val >= 0 %}
               Moisture : {{ z2_eve_moisture_val | round(0) | int }}% → {{ z2_eve_moisture_end | round(0) | int }}%
             {% elif zone_2_moisture_sensor != '' and z2_eve_moisture_val >= 0 %}
@@ -1231,6 +1233,7 @@ action:
             {% endif %}
           z3_eve_moisture_line: >-
             {% if z3_eve_moisture_wet | bool(false) %}
+              Moisture : {{ z3_eve_moisture_val | round(0) | int }}% (above skip threshold)
             {% elif z3_eve_should_water and zone_3_moisture_sensor != '' and z3_eve_moisture_val >= 0 %}
               Moisture : {{ z3_eve_moisture_val | round(0) | int }}% → {{ z3_eve_moisture_end | round(0) | int }}%
             {% elif zone_3_moisture_sensor != '' and z3_eve_moisture_val >= 0 %}
@@ -1249,6 +1252,7 @@ action:
             {% endif %}
           z4_eve_moisture_line: >-
             {% if z4_eve_moisture_wet | bool(false) %}
+              Moisture : {{ z4_eve_moisture_val | round(0) | int }}% (above skip threshold)
             {% elif z4_eve_should_water and zone_4_moisture_sensor != '' and z4_eve_moisture_val >= 0 %}
               Moisture : {{ z4_eve_moisture_val | round(0) | int }}% → {{ z4_eve_moisture_end | round(0) | int }}%
             {% elif zone_4_moisture_sensor != '' and z4_eve_moisture_val >= 0 %}

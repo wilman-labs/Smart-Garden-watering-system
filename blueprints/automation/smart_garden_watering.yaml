@@ -744,7 +744,6 @@ variables:
   rain_threshold: !input rain_threshold
   temperature_cool_max: !input temperature_cool_max
   temperature_hot_min: !input temperature_hot_min
-  evening_check_time: !input evening_check_time
   notify_target: !input notify_target
   # Zone 1
   zone_1_enabled: !input zone_1_enabled

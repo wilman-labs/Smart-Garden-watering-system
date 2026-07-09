@@ -15,6 +15,7 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 | **Soil moisture integration** | Optional per-zone sensors to skip or force watering |
 | **4 independent zones** | Each zone has its own valve, sensor, and settings |
 | **Post-cycle summary notification** | Sends a per-zone summary (moisture, duration, skip reason) after every cycle, and notifies immediately on rain-skip |
+| **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM); zones whose soil is still below the skip threshold are watered again using a shorter per-zone evening duration |
 
 ---
 
@@ -68,6 +69,7 @@ automation from this blueprint.
 | Rain Skip Threshold | 3 mm | Skip all watering if forecast rain ≥ this value |
 | Cool Day Max Temp | 15 °C | High temp below this → use Cool durations |
 | Hot Day Min Temp | 28 °C | High temp at/above this → use Hot durations |
+| Hot Day Evening Check Time | 20:00:00 | Time to run the evening moisture check on hot days |
 | Watering Interval | 2 days | Days between watering runs |
 | Notification Service | *(empty)* | Optional notify service (e.g. `notify.mobile_app_my_phone`). If set, cycle-complete and rain-skip summaries are also sent via this service in addition to a persistent notification |
 
@@ -84,6 +86,8 @@ automation from this blueprint.
 | Cool Day Duration | 300 s | Valve open time on a cool day |
 | Warm Day Duration | 600 s | Valve open time on a warm day |
 | Hot Day Duration | 900 s | Valve open time on a hot day |
+| Hot Day Evening Duration | 8 min | Valve open time for the evening hot-day check (default ≈ half of hot morning duration) |
+| Water if No Sensor (evening) | true | Water in the evening even when no moisture sensor is fitted or the sensor is not responding |
 
 ---
 
@@ -119,6 +123,51 @@ Sunrise + offset
   │  Close valve      │
   │  Update tracker   │
   └───────────────────┘
+       │
+       ▼
+  Send morning summary notification
+
+═══ Evening hot-day check (separate time trigger) ═══
+
+Evening check time (default 20:00)
+       │
+       ▼
+  Fetch daily forecast
+       │
+       ▼
+  Hot day?  ──NO──▶  STOP (no evening watering)
+       │ YES
+       ▼
+  Precipitation ≥ rain threshold?  ──YES──▶  STOP
+       │ NO
+       ▼
+  ┌────┴──────────────┐
+  │  For each zone:   │
+  │                   │
+  │  Zone enabled?    │
+  │  Valve selected?  │
+  │       │           │
+  │  Sensor reading?  │
+  │  ├─ YES: moisture │
+  │  │  above skip    │
+  │  │  threshold?    │
+  │  │  ──YES──▶ skip │
+  │  │  │ NO          │
+  │  │  Open valve    │
+  │  └─ NO:           │
+  │     "Water if no  │
+  │     sensor"       │
+  │     enabled?      │
+  │     ──NO──▶ skip  │
+  │     │ YES         │
+  │     Open valve    │
+  │  Wait (evening    │
+  │  duration)        │
+  │  Close valve      │
+  └───────────────────┘
+       │
+       ▼
+  Send evening summary notification
 ```
 
 ---

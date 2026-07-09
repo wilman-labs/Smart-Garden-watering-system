@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Garden Watering System v0.5
+  name: Smart Garden Watering System v0.6
   description: >-
     Automatic 4-zone garden watering system that adapts to daily weather forecasts
     and optional soil moisture sensors.
@@ -26,6 +26,11 @@ blueprint:
     - Valve availability check — reports offline valves in notifications
 
     - **Single notification target** — send cycle summaries to one notification service
+
+    - **Hot day evening check** — on hot days a second moisture check runs at a
+      configurable evening time; zones whose soil is still below the skip threshold
+      are watered again using a shorter per-zone evening duration.
+      Each zone has an option to water even when no sensor is fitted or responding.
 
 
     **Pre-requisites**
@@ -114,6 +119,16 @@ blueprint:
               step: 1
               unit_of_measurement: "°C"
               mode: slider
+
+        evening_check_time:
+          name: Hot Day Evening Check Time
+          description: >-
+            Time to check soil moisture and water again on hot days.
+            Only runs when today's forecast high is at or above the Hot Day
+            Min Temperature threshold.
+          default: "20:00:00"
+          selector:
+            time: {}
 
     # ── Notifications ───────────────────────────────────────────────
     notifications:
@@ -268,6 +283,30 @@ blueprint:
               unit_of_measurement: min
               mode: box
 
+        zone_1_hot_evening_duration:
+          name: "Zone 1 — Hot Day Evening Duration (minutes)"
+          description: >-
+            Watering duration for the evening hot-day moisture check.
+            Defaults to approximately half the hot-day morning duration.
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
+              mode: box
+
+        zone_1_evening_water_no_sensor:
+          name: "Zone 1 — Water if No Sensor (evening)"
+          description: >-
+            When enabled, Zone 1 will be watered during the evening hot-day
+            check even if no moisture sensor is configured or the sensor is
+            not responding.
+          default: true
+          selector:
+            boolean: {}
+
     # ── Zone 2 ─────────────────────────────────────────────────────
     zone_2:
       name: "Zone 2"
@@ -382,6 +421,30 @@ blueprint:
               step: 1
               unit_of_measurement: min
               mode: box
+
+        zone_2_hot_evening_duration:
+          name: "Zone 2 — Hot Day Evening Duration (minutes)"
+          description: >-
+            Watering duration for the evening hot-day moisture check.
+            Defaults to approximately half the hot-day morning duration.
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
+              mode: box
+
+        zone_2_evening_water_no_sensor:
+          name: "Zone 2 — Water if No Sensor (evening)"
+          description: >-
+            When enabled, Zone 2 will be watered during the evening hot-day
+            check even if no moisture sensor is configured or the sensor is
+            not responding.
+          default: true
+          selector:
+            boolean: {}
 
     # ── Zone 3 ─────────────────────────────────────────────────────
     zone_3:
@@ -498,6 +561,30 @@ blueprint:
               unit_of_measurement: min
               mode: box
 
+        zone_3_hot_evening_duration:
+          name: "Zone 3 — Hot Day Evening Duration (minutes)"
+          description: >-
+            Watering duration for the evening hot-day moisture check.
+            Defaults to approximately half the hot-day morning duration.
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
+              mode: box
+
+        zone_3_evening_water_no_sensor:
+          name: "Zone 3 — Water if No Sensor (evening)"
+          description: >-
+            When enabled, Zone 3 will be watered during the evening hot-day
+            check even if no moisture sensor is configured or the sensor is
+            not responding.
+          default: true
+          selector:
+            boolean: {}
+
     # ── Zone 4 ─────────────────────────────────────────────────────
     zone_4:
       name: "Zone 4"
@@ -613,11 +700,39 @@ blueprint:
               unit_of_measurement: min
               mode: box
 
+        zone_4_hot_evening_duration:
+          name: "Zone 4 — Hot Day Evening Duration (minutes)"
+          description: >-
+            Watering duration for the evening hot-day moisture check.
+            Defaults to approximately half the hot-day morning duration.
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: min
+              mode: box
+
+        zone_4_evening_water_no_sensor:
+          name: "Zone 4 — Water if No Sensor (evening)"
+          description: >-
+            When enabled, Zone 4 will be watered during the evening hot-day
+            check even if no moisture sensor is configured or the sensor is
+            not responding.
+          default: true
+          selector:
+            boolean: {}
+
 # ── Trigger ──────────────────────────────────────────────────────────
 trigger:
   - platform: sun
     event: sunrise
     offset: !input sunrise_offset
+    id: morning
+  - platform: time
+    at: !input evening_check_time
+    id: evening
 
 # Run one instance at a time; silently ignore retriggers while running.
 mode: single
@@ -629,6 +744,7 @@ variables:
   rain_threshold: !input rain_threshold
   temperature_cool_max: !input temperature_cool_max
   temperature_hot_min: !input temperature_hot_min
+  evening_check_time: !input evening_check_time
   notify_target: !input notify_target
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
@@ -642,6 +758,8 @@ variables:
   zone_1_cool_duration: !input zone_1_cool_duration
   zone_1_warm_duration: !input zone_1_warm_duration
   zone_1_hot_duration: !input zone_1_hot_duration
+  zone_1_hot_evening_duration: !input zone_1_hot_evening_duration
+  zone_1_evening_water_no_sensor: !input zone_1_evening_water_no_sensor
   # Zone 2
   zone_2_enabled: !input zone_2_enabled
   zone_2_name: !input zone_2_name
@@ -654,6 +772,8 @@ variables:
   zone_2_cool_duration: !input zone_2_cool_duration
   zone_2_warm_duration: !input zone_2_warm_duration
   zone_2_hot_duration: !input zone_2_hot_duration
+  zone_2_hot_evening_duration: !input zone_2_hot_evening_duration
+  zone_2_evening_water_no_sensor: !input zone_2_evening_water_no_sensor
   # Zone 3
   zone_3_enabled: !input zone_3_enabled
   zone_3_name: !input zone_3_name
@@ -666,6 +786,8 @@ variables:
   zone_3_cool_duration: !input zone_3_cool_duration
   zone_3_warm_duration: !input zone_3_warm_duration
   zone_3_hot_duration: !input zone_3_hot_duration
+  zone_3_hot_evening_duration: !input zone_3_hot_evening_duration
+  zone_3_evening_water_no_sensor: !input zone_3_evening_water_no_sensor
   # Zone 4
   zone_4_enabled: !input zone_4_enabled
   zone_4_name: !input zone_4_name
@@ -678,9 +800,515 @@ variables:
   zone_4_cool_duration: !input zone_4_cool_duration
   zone_4_warm_duration: !input zone_4_warm_duration
   zone_4_hot_duration: !input zone_4_hot_duration
+  zone_4_hot_evening_duration: !input zone_4_hot_evening_duration
+  zone_4_evening_water_no_sensor: !input zone_4_evening_water_no_sensor
 
 # ── Action ───────────────────────────────────────────────────────────
 action:
+
+  # ── Determine trigger ─────────────────────────────────────────────
+  - variables:
+      _trigger_id: "{{ trigger.id | default('morning') }}"
+
+  # ════════════════════════════════════════════════════════════════
+  # EVENING HOT-DAY CHECK (runs only on the evening time trigger)
+  # ════════════════════════════════════════════════════════════════
+  - if:
+      - condition: template
+        value_template: "{{ _trigger_id == 'evening' }}"
+    then:
+
+      # Fetch tonight's forecast
+      - alias: "Evening — fetch daily weather forecast"
+        service: weather.get_forecasts
+        target:
+          entity_id: "{{ weather_entity }}"
+        data:
+          type: daily
+        response_variable: eve_weather_response
+
+      # Parse forecast
+      - alias: "Evening — parse forecast"
+        variables:
+          _eve_today: "{{ eve_weather_response[weather_entity]['forecast'][0] }}"
+          eve_precipitation: "{{ _eve_today.precipitation | default(0) | float(0) }}"
+          eve_high_temp: "{{ _eve_today.temperature | default(20) | float(20) }}"
+          eve_day_type: >-
+            {% if eve_high_temp < (temperature_cool_max | float(15)) %}
+              cool
+            {% elif eve_high_temp >= (temperature_hot_min | float(28)) %}
+              hot
+            {% else %}
+              warm
+            {% endif %}
+
+      # Stop if it's not a hot day — no evening watering needed
+      - if:
+          - condition: template
+            value_template: "{{ eve_day_type | trim != 'hot' }}"
+        then:
+          - stop: "Evening check — not a hot day, no evening watering"
+
+      # Stop if rain threshold was exceeded
+      - if:
+          - condition: template
+            value_template: "{{ eve_precipitation >= (rain_threshold | float(0)) }}"
+        then:
+          - stop: "Evening check — rain threshold exceeded, skipping"
+
+      # ── Zone 1 — evaluate evening watering decision ──────────────
+      - alias: "Zone 1 — evaluate evening watering decision"
+        variables:
+          z1_eve_moisture_val: >-
+            {% if zone_1_moisture_sensor != '' and
+                  states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_1_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z1_eve_sensor_ok: "{{ z1_eve_moisture_val >= 0 }}"
+          z1_eve_moisture_wet: >-
+            {% set thr = zone_1_moisture_skip_threshold | int(0) %}
+            {% if z1_eve_sensor_ok and thr > 0 %}
+              {{ z1_eve_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          z1_eve_should_water: >-
+            {{ (zone_1_enabled | bool(false))
+               and (zone_1_valve != '')
+               and not (z1_eve_moisture_wet | bool(false))
+               and (
+                 z1_eve_sensor_ok or
+                 (zone_1_evening_water_no_sensor | bool(true))
+               ) }}
+          z1_eve_duration: "{{ zone_1_hot_evening_duration | int(8) }}"
+          z1_eve_result: >-
+            {% if not (zone_1_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_1_valve == '' %}
+              ⏭ No valve configured
+            {% elif z1_eve_moisture_wet | bool(false) %}
+              ⏭ Skipped — moisture {{ z1_eve_moisture_val | round(0) | int }}% above {{ zone_1_moisture_skip_threshold }}%
+            {% elif not z1_eve_sensor_ok and not (zone_1_evening_water_no_sensor | bool(true)) %}
+              ⏭ Skipped — no sensor and evening no-sensor watering disabled
+            {% else %}
+              💧 Watered {{ z1_eve_duration }} min (hot day evening)
+            {% endif %}
+          z1_eve_moisture_line: >-
+            {% if z1_eve_sensor_ok %}
+              Moisture : {{ z1_eve_moisture_val | round(0) | int }}%
+            {% elif zone_1_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ── Zone 2 — evaluate evening watering decision ──────────────
+      - alias: "Zone 2 — evaluate evening watering decision"
+        variables:
+          z2_eve_moisture_val: >-
+            {% if zone_2_moisture_sensor != '' and
+                  states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_2_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z2_eve_sensor_ok: "{{ z2_eve_moisture_val >= 0 }}"
+          z2_eve_moisture_wet: >-
+            {% set thr = zone_2_moisture_skip_threshold | int(0) %}
+            {% if z2_eve_sensor_ok and thr > 0 %}
+              {{ z2_eve_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          z2_eve_should_water: >-
+            {{ (zone_2_enabled | bool(false))
+               and (zone_2_valve != '')
+               and not (z2_eve_moisture_wet | bool(false))
+               and (
+                 z2_eve_sensor_ok or
+                 (zone_2_evening_water_no_sensor | bool(true))
+               ) }}
+          z2_eve_duration: "{{ zone_2_hot_evening_duration | int(8) }}"
+          z2_eve_result: >-
+            {% if not (zone_2_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_2_valve == '' %}
+              ⏭ No valve configured
+            {% elif z2_eve_moisture_wet | bool(false) %}
+              ⏭ Skipped — moisture {{ z2_eve_moisture_val | round(0) | int }}% above {{ zone_2_moisture_skip_threshold }}%
+            {% elif not z2_eve_sensor_ok and not (zone_2_evening_water_no_sensor | bool(true)) %}
+              ⏭ Skipped — no sensor and evening no-sensor watering disabled
+            {% else %}
+              💧 Watered {{ z2_eve_duration }} min (hot day evening)
+            {% endif %}
+          z2_eve_moisture_line: >-
+            {% if z2_eve_sensor_ok %}
+              Moisture : {{ z2_eve_moisture_val | round(0) | int }}%
+            {% elif zone_2_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ── Zone 3 — evaluate evening watering decision ──────────────
+      - alias: "Zone 3 — evaluate evening watering decision"
+        variables:
+          z3_eve_moisture_val: >-
+            {% if zone_3_moisture_sensor != '' and
+                  states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_3_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z3_eve_sensor_ok: "{{ z3_eve_moisture_val >= 0 }}"
+          z3_eve_moisture_wet: >-
+            {% set thr = zone_3_moisture_skip_threshold | int(0) %}
+            {% if z3_eve_sensor_ok and thr > 0 %}
+              {{ z3_eve_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          z3_eve_should_water: >-
+            {{ (zone_3_enabled | bool(false))
+               and (zone_3_valve != '')
+               and not (z3_eve_moisture_wet | bool(false))
+               and (
+                 z3_eve_sensor_ok or
+                 (zone_3_evening_water_no_sensor | bool(true))
+               ) }}
+          z3_eve_duration: "{{ zone_3_hot_evening_duration | int(8) }}"
+          z3_eve_result: >-
+            {% if not (zone_3_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_3_valve == '' %}
+              ⏭ No valve configured
+            {% elif z3_eve_moisture_wet | bool(false) %}
+              ⏭ Skipped — moisture {{ z3_eve_moisture_val | round(0) | int }}% above {{ zone_3_moisture_skip_threshold }}%
+            {% elif not z3_eve_sensor_ok and not (zone_3_evening_water_no_sensor | bool(true)) %}
+              ⏭ Skipped — no sensor and evening no-sensor watering disabled
+            {% else %}
+              💧 Watered {{ z3_eve_duration }} min (hot day evening)
+            {% endif %}
+          z3_eve_moisture_line: >-
+            {% if z3_eve_sensor_ok %}
+              Moisture : {{ z3_eve_moisture_val | round(0) | int }}%
+            {% elif zone_3_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ── Zone 4 — evaluate evening watering decision ──────────────
+      - alias: "Zone 4 — evaluate evening watering decision"
+        variables:
+          z4_eve_moisture_val: >-
+            {% if zone_4_moisture_sensor != '' and
+                  states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_4_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z4_eve_sensor_ok: "{{ z4_eve_moisture_val >= 0 }}"
+          z4_eve_moisture_wet: >-
+            {% set thr = zone_4_moisture_skip_threshold | int(0) %}
+            {% if z4_eve_sensor_ok and thr > 0 %}
+              {{ z4_eve_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          z4_eve_should_water: >-
+            {{ (zone_4_enabled | bool(false))
+               and (zone_4_valve != '')
+               and not (z4_eve_moisture_wet | bool(false))
+               and (
+                 z4_eve_sensor_ok or
+                 (zone_4_evening_water_no_sensor | bool(true))
+               ) }}
+          z4_eve_duration: "{{ zone_4_hot_evening_duration | int(8) }}"
+          z4_eve_result: >-
+            {% if not (zone_4_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_4_valve == '' %}
+              ⏭ No valve configured
+            {% elif z4_eve_moisture_wet | bool(false) %}
+              ⏭ Skipped — moisture {{ z4_eve_moisture_val | round(0) | int }}% above {{ zone_4_moisture_skip_threshold }}%
+            {% elif not z4_eve_sensor_ok and not (zone_4_evening_water_no_sensor | bool(true)) %}
+              ⏭ Skipped — no sensor and evening no-sensor watering disabled
+            {% else %}
+              💧 Watered {{ z4_eve_duration }} min (hot day evening)
+            {% endif %}
+          z4_eve_moisture_line: >-
+            {% if z4_eve_sensor_ok %}
+              Moisture : {{ z4_eve_moisture_val | round(0) | int }}%
+            {% elif zone_4_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ════════════════════════════════════════════════════════════
+      # EXECUTE EVENING ZONES — PARALLEL
+      # ════════════════════════════════════════════════════════════
+
+      - alias: "Execute evening watering — parallel"
+        parallel:
+          - sequence:
+              - alias: "Zone 1 — evening water if needed"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ z1_eve_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_1_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Zone 1 — check valve responded (evening)"
+                        variables:
+                          z1_eve_valve_offline: "{{ states(zone_1_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ z1_eve_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_1_valve }}"
+                              - variables:
+                                  z1_eve_should_water: false
+                                  z1_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ z1_eve_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_1_valve }}"
+          - sequence:
+              - alias: "Zone 2 — evening water if needed"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ z2_eve_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_2_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Zone 2 — check valve responded (evening)"
+                        variables:
+                          z2_eve_valve_offline: "{{ states(zone_2_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ z2_eve_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_2_valve }}"
+                              - variables:
+                                  z2_eve_should_water: false
+                                  z2_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ z2_eve_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_2_valve }}"
+          - sequence:
+              - alias: "Zone 3 — evening water if needed"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ z3_eve_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_3_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Zone 3 — check valve responded (evening)"
+                        variables:
+                          z3_eve_valve_offline: "{{ states(zone_3_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ z3_eve_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_3_valve }}"
+                              - variables:
+                                  z3_eve_should_water: false
+                                  z3_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ z3_eve_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_3_valve }}"
+          - sequence:
+              - alias: "Zone 4 — evening water if needed"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ z4_eve_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_4_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Zone 4 — check valve responded (evening)"
+                        variables:
+                          z4_eve_valve_offline: "{{ states(zone_4_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ z4_eve_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_4_valve }}"
+                              - variables:
+                                  z4_eve_should_water: false
+                                  z4_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ z4_eve_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_4_valve }}"
+
+      # ── Evening post-watering moisture update ─────────────────────
+      - alias: "Evening — update moisture lines post-watering"
+        variables:
+          z1_eve_moisture_end: >-
+            {% if zone_1_moisture_sensor != '' and
+                  states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_1_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z1_eve_moisture_line: >-
+            {% if z1_eve_moisture_wet | bool(false) %}
+            {% elif z1_eve_should_water and zone_1_moisture_sensor != '' and z1_eve_moisture_val >= 0 %}
+              Moisture : {{ z1_eve_moisture_val | round(0) | int }}% → {{ z1_eve_moisture_end | round(0) | int }}%
+            {% elif zone_1_moisture_sensor != '' and z1_eve_moisture_val >= 0 %}
+              Moisture : {{ z1_eve_moisture_val | round(0) | int }}%
+            {% elif zone_1_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+          z2_eve_moisture_end: >-
+            {% if zone_2_moisture_sensor != '' and
+                  states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_2_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z2_eve_moisture_line: >-
+            {% if z2_eve_moisture_wet | bool(false) %}
+            {% elif z2_eve_should_water and zone_2_moisture_sensor != '' and z2_eve_moisture_val >= 0 %}
+              Moisture : {{ z2_eve_moisture_val | round(0) | int }}% → {{ z2_eve_moisture_end | round(0) | int }}%
+            {% elif zone_2_moisture_sensor != '' and z2_eve_moisture_val >= 0 %}
+              Moisture : {{ z2_eve_moisture_val | round(0) | int }}%
+            {% elif zone_2_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+          z3_eve_moisture_end: >-
+            {% if zone_3_moisture_sensor != '' and
+                  states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_3_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z3_eve_moisture_line: >-
+            {% if z3_eve_moisture_wet | bool(false) %}
+            {% elif z3_eve_should_water and zone_3_moisture_sensor != '' and z3_eve_moisture_val >= 0 %}
+              Moisture : {{ z3_eve_moisture_val | round(0) | int }}% → {{ z3_eve_moisture_end | round(0) | int }}%
+            {% elif zone_3_moisture_sensor != '' and z3_eve_moisture_val >= 0 %}
+              Moisture : {{ z3_eve_moisture_val | round(0) | int }}%
+            {% elif zone_3_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+          z4_eve_moisture_end: >-
+            {% if zone_4_moisture_sensor != '' and
+                  states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_4_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          z4_eve_moisture_line: >-
+            {% if z4_eve_moisture_wet | bool(false) %}
+            {% elif z4_eve_should_water and zone_4_moisture_sensor != '' and z4_eve_moisture_val >= 0 %}
+              Moisture : {{ z4_eve_moisture_val | round(0) | int }}% → {{ z4_eve_moisture_end | round(0) | int }}%
+            {% elif zone_4_moisture_sensor != '' and z4_eve_moisture_val >= 0 %}
+              Moisture : {{ z4_eve_moisture_val | round(0) | int }}%
+            {% elif zone_4_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ── Evening summary notification ──────────────────────────────
+      - alias: "Evening cycle — build summary message"
+        variables:
+          _eve_summary: |-
+            📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
+            🌡 Forecast: {{ eve_high_temp }}°C (hot day — evening check)
+            🌧 Rain: {{ eve_precipitation }} mm
+            {%- set ns = namespace(parts=[]) -%}
+            {%- if zone_1_enabled | bool(false) -%}
+            {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}
+            {%- set z1_ml = z1_eve_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z1_label + ': ' + (z1_eve_result | trim) + ('\n' + z1_ml if z1_ml else '')] -%}
+            {%- endif -%}
+            {%- if zone_2_enabled | bool(false) -%}
+            {%- set z2_label = (zone_2_name | trim) or 'Zone 2' -%}
+            {%- set z2_ml = z2_eve_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z2_label + ': ' + (z2_eve_result | trim) + ('\n' + z2_ml if z2_ml else '')] -%}
+            {%- endif -%}
+            {%- if zone_3_enabled | bool(false) -%}
+            {%- set z3_label = (zone_3_name | trim) or 'Zone 3' -%}
+            {%- set z3_ml = z3_eve_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z3_label + ': ' + (z3_eve_result | trim) + ('\n' + z3_ml if z3_ml else '')] -%}
+            {%- endif -%}
+            {%- if zone_4_enabled | bool(false) -%}
+            {%- set z4_label = (zone_4_name | trim) or 'Zone 4' -%}
+            {%- set z4_ml = z4_eve_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z4_label + ': ' + (z4_eve_result | trim) + ('\n' + z4_ml if z4_ml else '')] -%}
+            {%- endif %}
+
+            {{ ns.parts | join('\n\n') }}
+
+      - alias: "Evening cycle — persistent notification"
+        service: persistent_notification.create
+        data:
+          title: "🌙 Garden Watering — Evening Hot Day Check"
+          notification_id: garden_watering_evening
+          message: "{{ _eve_summary }}"
+
+      - alias: "Evening cycle — notify target"
+        choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ notify_target != '' }}"
+            sequence:
+              - service: "{{ notify_target }}"
+                data:
+                  title: "🌙 Garden Watering — Evening Hot Day Check"
+                  message: "{{ _eve_summary }}"
+
+      - stop: "Evening hot-day check complete"
 
   # ── 1. Fetch today's daily forecast ──────────────────────────────
   - alias: "Fetch daily weather forecast"

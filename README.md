@@ -83,9 +83,9 @@ automation from this blueprint.
 | Soil Moisture Sensor | *(empty)* | Optional moisture sensor |
 | Skip if Moisture Above | 70 % | Skip zone if soil is already wet |
 | Force Water if Moisture Below | 30 % | Water immediately if soil is too dry |
-| Cool Day Duration | 300 s | Valve open time on a cool day |
-| Warm Day Duration | 600 s | Valve open time on a warm day |
-| Hot Day Duration | 900 s | Valve open time on a hot day |
+| Cool Day Duration | 5 min | Valve open time on a cool day |
+| Warm Day Duration | 10 min | Valve open time on a warm day |
+| Hot Day Duration | 15 min | Valve open time on a hot day |
 | Hot Day Evening Duration | 8 min | Valve open time for the evening hot-day check (default ≈ half of hot morning duration) |
 | Water if No Sensor (evening) | true | Water in the evening even when no moisture sensor is fitted or the sensor is not responding |
 

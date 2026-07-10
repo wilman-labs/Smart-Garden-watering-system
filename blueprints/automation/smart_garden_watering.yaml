@@ -28,8 +28,9 @@ blueprint:
     - **Single notification target** — send cycle summaries to one notification service
 
     - **Hot day evening check** — on hot days a second moisture check runs at a
-      configurable evening time; zones whose soil is still below the skip threshold
-      are watered again using a shorter per-zone evening duration.
+      configurable evening time using the stored morning forecast classification;
+      zones whose soil is still below the skip threshold are watered again using
+      a shorter per-zone evening duration.
       Each zone has an option to water even when no sensor is fitted or responding.
 
 
@@ -44,6 +45,9 @@ blueprint:
        Leave the field empty to treat a zone as never watered (always due).
 
     3. Switch, valve, or input_boolean entities that control each water valve.
+
+    4. *(Optional but recommended for evening checks)* One `input_text` helper
+       to cache the morning forecast classification for the evening check.
 
   domain: automation
   author: wilman-labs
@@ -124,11 +128,24 @@ blueprint:
           name: Hot Day Evening Check Time
           description: >-
             Time to check soil moisture and water again on hot days.
-            Only runs when today's forecast high is at or above the Hot Day
-            Min Temperature threshold.
+            When a morning forecast cache helper is configured, the evening
+            check uses the stored morning forecast high for this decision.
           default: "20:00:00"
           selector:
             time: {}
+
+        morning_forecast_cache:
+          name: Morning Forecast Cache Helper (optional)
+          description: >-
+            input_text helper used to store the morning forecast classification
+            for the evening cycle. Configure this helper if you want the evening
+            check to use the morning weather report instead of re-checking the
+            weather in the evening. When left empty, the blueprint falls back to
+            the live evening forecast.
+          default: ""
+          selector:
+            entity:
+              domain: input_text
 
     # ── Notifications ───────────────────────────────────────────────
     notifications:
@@ -744,6 +761,7 @@ variables:
   rain_threshold: !input rain_threshold
   temperature_cool_max: !input temperature_cool_max
   temperature_hot_min: !input temperature_hot_min
+  morning_forecast_cache: !input morning_forecast_cache
   notify_target: !input notify_target
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
@@ -817,29 +835,93 @@ action:
         value_template: "{{ _trigger_id == 'evening' }}"
     then:
 
-      # Fetch tonight's forecast
-      - alias: "Evening — fetch daily weather forecast"
-        service: weather.get_forecasts
-        target:
-          entity_id: "{{ weather_entity }}"
-        data:
-          type: daily
-        response_variable: eve_weather_response
-
-      # Parse forecast
-      - alias: "Evening — parse forecast"
+      # Read the stored morning forecast classification
+      - alias: "Evening — read stored morning forecast"
         variables:
-          _eve_today: "{{ eve_weather_response[weather_entity]['forecast'][0] }}"
-          eve_precipitation: "{{ _eve_today.precipitation | default(0) | float(0) }}"
-          eve_high_temp: "{{ _eve_today.temperature | default(20) | float(20) }}"
-          eve_day_type: >-
-            {% if eve_high_temp < (temperature_cool_max | float(15)) %}
-              cool
-            {% elif eve_high_temp >= (temperature_hot_min | float(28)) %}
-              hot
+          _today_key: "{{ now().strftime('%Y-%m-%d') }}"
+          # Safe defaults mirror the live forecast fallbacks used below.
+          eve_high_temp: 20
+          eve_precipitation: 0
+          eve_day_type: "warm"
+          eve_rain_skip: false
+          eve_forecast_source: "live"
+          eve_forecast_note: ""
+          _morning_cache_raw: >-
+            {% if morning_forecast_cache != '' and has_value(morning_forecast_cache) %}
+              {{ states(morning_forecast_cache) }}
             {% else %}
-              warm
+              {{ '' }}
             {% endif %}
+          _morning_cache_parts: >-
+            {{ _morning_cache_raw.split(';') if _morning_cache_raw != '' else [] }}
+          # Expected order:
+          # 0=date=YYYY-MM-DD
+          # 1=high=<number>
+          # 2=precipitation=<number>
+          # 3=day_type=cool|warm|hot
+          # 4=rain_skip=true|false
+          # Numeric fields are written from morning forecast floats; the float
+          # defaults below are defensive if the helper is edited manually.
+          # Cached data is treated as valid only for the current date; stale or
+          # future-dated cache entries automatically fall back to the live
+          # evening forecast path.
+          morning_cache_valid: >-
+            {{ (_morning_cache_parts | count) == 5
+               and _morning_cache_parts[0].startswith('date=')
+               and _morning_cache_parts[0].split('=', 1)[1] == _today_key
+               and _morning_cache_parts[1].startswith('high=')
+               and _morning_cache_parts[2].startswith('precipitation=')
+               and _morning_cache_parts[3].startswith('day_type=')
+               and _morning_cache_parts[3].split('=', 1)[1] in ['cool', 'warm', 'hot']
+               and _morning_cache_parts[4].startswith('rain_skip=')
+               and _morning_cache_parts[4].split('=', 1)[1] in ['true', 'false'] }}
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ morning_cache_valid }}"
+            sequence:
+              - alias: "Evening — use stored morning forecast"
+                variables:
+                  eve_high_temp: >-
+                    {{ _morning_cache_parts[1].split('=', 1)[1] | float(20) }}
+                  eve_precipitation: >-
+                    {{ _morning_cache_parts[2].split('=', 1)[1] | float(0) }}
+                  eve_day_type: >-
+                    {{ _morning_cache_parts[3].split('=', 1)[1] | trim }}
+                  eve_rain_skip: "{{ eve_precipitation >= (rain_threshold | float(0)) }}"
+                  eve_forecast_source: "morning"
+                  eve_forecast_note: ""
+        default:
+          - alias: "Evening — fetch daily weather forecast"
+            service: weather.get_forecasts
+            target:
+              entity_id: "{{ weather_entity }}"
+            data:
+              type: daily
+            response_variable: eve_weather_response
+          - alias: "Evening — parse forecast"
+            variables:
+              _eve_today: "{{ eve_weather_response[weather_entity]['forecast'][0] }}"
+              eve_precipitation: "{{ _eve_today.precipitation | default(0) | float(0) }}"
+              eve_high_temp: "{{ _eve_today.temperature | default(20) | float(20) }}"
+              eve_day_type: >-
+                {% if eve_high_temp < (temperature_cool_max | float(15)) %}
+                  cool
+                {% elif eve_high_temp >= (temperature_hot_min | float(28)) %}
+                  hot
+                {% else %}
+                  warm
+                {% endif %}
+              eve_rain_skip: "{{ eve_precipitation >= (rain_threshold | float(0)) }}"
+              eve_forecast_source: "live"
+              eve_forecast_note: >-
+                {% if morning_forecast_cache == '' %}
+                  Using live evening forecast — morning cache helper not configured.
+                {% elif _morning_cache_raw == '' %}
+                  Using live evening forecast — morning cache helper has no usable value.
+                {% else %}
+                  Using live evening forecast — morning cache was stale or malformed.
+                {% endif %}
 
       # Stop if it's not a hot day — no evening watering needed
       - if:
@@ -848,10 +930,10 @@ action:
         then:
           - stop: "Evening check — not a hot day, no evening watering"
 
-      # Stop if rain threshold was exceeded
+      # Stop if the chosen forecast exceeded the rain threshold
       - if:
           - condition: template
-            value_template: "{{ eve_precipitation >= (rain_threshold | float(0)) }}"
+            value_template: "{{ eve_rain_skip }}"
         then:
           - stop: "Evening check — rain threshold exceeded, skipping"
 
@@ -1267,8 +1349,11 @@ action:
         variables:
           _eve_summary: |-
             📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
-            🌡 Forecast: {{ eve_high_temp }}°C (hot day — evening check)
+            🌡 {{ 'Morning forecast high' if eve_forecast_source == 'morning' else 'Evening forecast high' }}: {{ eve_high_temp }}°C
             🌧 Rain: {{ eve_precipitation }} mm
+            {%- if eve_forecast_note | trim %}
+            ℹ {{ eve_forecast_note | trim }}
+            {%- endif %}
             {%- set ns = namespace(parts=[]) -%}
             {%- if zone_1_enabled | bool(false) -%}
             {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}
@@ -1296,7 +1381,7 @@ action:
       - alias: "Evening cycle — persistent notification"
         service: persistent_notification.create
         data:
-          title: "🌙 Garden Watering — Evening Hot Day Check"
+          title: "🌙 Garden Watering — Evening Check"
           notification_id: garden_watering_evening
           message: "{{ _eve_summary }}"
 
@@ -1308,7 +1393,7 @@ action:
             sequence:
               - service: "{{ notify_target }}"
                 data:
-                  title: "🌙 Garden Watering — Evening Hot Day Check"
+                  title: "🌙 Garden Watering — Evening Check"
                   message: "{{ _eve_summary }}"
 
       - stop: "Evening hot-day check complete"
@@ -1337,6 +1422,25 @@ action:
         {% else %}
           warm
         {% endif %}
+
+  - alias: "Store morning forecast for evening check"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ morning_forecast_cache != '' }}"
+        sequence:
+          # Cache format: date=YYYY-MM-DD;high=...;precipitation=...;day_type=...;rain_skip=true|false
+          # Stored values come from numeric weather fields and the fixed cool/warm/hot enum.
+          - service: input_text.set_value
+            target:
+              entity_id: "{{ morning_forecast_cache }}"
+            data:
+              value: >-
+                {{ 'date=' ~ now().strftime('%Y-%m-%d') ~
+                   ';high=' ~ (today_high_temp | string) ~
+                   ';precipitation=' ~ (today_precipitation | string) ~
+                   ';day_type=' ~ (day_type | trim) ~
+                   ';rain_skip=' ~ ('true' if (today_precipitation >= (rain_threshold | float(0))) else 'false') }}
 
   # ── 3. Abort if too much rain is forecast ────────────────────────
   - alias: "Skip all watering — rain threshold exceeded"

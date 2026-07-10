@@ -1296,7 +1296,7 @@ action:
       - alias: "Evening cycle — persistent notification"
         service: persistent_notification.create
         data:
-          title: "🌙 Garden Watering — Evening Hot Day Check"
+          title: "🌙 Garden Watering — Evening Check"
           notification_id: garden_watering_evening
           message: "{{ _eve_summary }}"
 
@@ -1308,7 +1308,7 @@ action:
             sequence:
               - service: "{{ notify_target }}"
                 data:
-                  title: "🌙 Garden Watering — Evening Hot Day Check"
+                  title: "🌙 Garden Watering — Evening Check"
                   message: "{{ _eve_summary }}"
 
       - stop: "Evening hot-day check complete"

@@ -1318,7 +1318,7 @@ action:
         variables:
           _eve_summary: |-
             📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
-            🌡 {{ 'Morning forecast high' if eve_forecast_source == 'morning' else 'Forecast' }}: {{ eve_high_temp }}°C
+            🌡 {{ 'Morning forecast high' if eve_forecast_source == 'morning' else 'Evening forecast high' }}: {{ eve_high_temp }}°C
             🌧 Rain: {{ eve_precipitation }} mm
             {%- set ns = namespace(parts=[]) -%}
             {%- if zone_1_enabled | bool(false) -%}
@@ -1395,7 +1395,7 @@ action:
           - condition: template
             value_template: "{{ morning_forecast_cache != '' }}"
         sequence:
-          # Cache format: YYYY-MM-DD|forecast_high|precipitation|day_type|rain_skip
+          # Cache format: YYYY-MM-DD|forecast_high|precipitation|day_type|rain_skip(1=true,0=false)
           - service: input_text.set_value
             target:
               entity_id: "{{ morning_forecast_cache }}"

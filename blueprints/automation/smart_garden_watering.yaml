@@ -839,6 +839,7 @@ action:
       - alias: "Evening — read stored morning forecast"
         variables:
           _today_key: "{{ now().strftime('%Y-%m-%d') }}"
+          # Safe defaults mirror the live forecast fallbacks used below.
           eve_high_temp: 20
           eve_precipitation: 0
           eve_day_type: "warm"
@@ -859,6 +860,8 @@ action:
           # 2=precipitation=<number>
           # 3=day_type=cool|warm|hot
           # 4=rain_skip=true|false
+          # Numeric fields are written from morning forecast floats; the float
+          # defaults below are defensive if the helper is edited manually.
           morning_cache_valid: >-
             {{ (_morning_cache_parts | count) == 5
                and _morning_cache_parts[0].startswith('date=')
@@ -1423,7 +1426,7 @@ action:
                    ';high=' ~ (today_high_temp | string) ~
                    ';precipitation=' ~ (today_precipitation | string) ~
                    ';day_type=' ~ (day_type | trim) ~
-                   ';rain_skip=' ~ ('true' if rain_skip else 'false') }}
+                   ';rain_skip=' ~ ('true' if (today_precipitation >= (rain_threshold | float(0))) else 'false') }}
 
   # ── 3. Abort if too much rain is forecast ────────────────────────
   - alias: "Skip all watering — rain threshold exceeded"

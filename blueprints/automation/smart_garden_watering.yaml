@@ -47,7 +47,7 @@ blueprint:
     3. Switch, valve, or input_boolean entities that control each water valve.
 
     4. *(Optional but recommended for evening checks)* One `input_text` helper
-       to cache the morning forecast classification for the evening return cycle.
+       to cache the morning forecast classification for the evening check.
 
   domain: automation
   author: wilman-labs
@@ -888,8 +888,7 @@ action:
                     {{ _morning_cache_parts[2].split('=', 1)[1] | float(0) }}
                   eve_day_type: >-
                     {{ _morning_cache_parts[3].split('=', 1)[1] | trim }}
-                  eve_rain_skip: >-
-                    {{ _morning_cache_parts[4].split('=', 1)[1] | lower in ['true', '1', 'yes'] }}
+                  eve_rain_skip: "{{ eve_precipitation >= (rain_threshold | float(0)) }}"
                   eve_forecast_source: "morning"
                   eve_forecast_note: ""
         default:

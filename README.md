@@ -15,7 +15,7 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 | **Soil moisture integration** | Optional per-zone sensors to skip or force watering |
 | **4 independent zones** | Each zone has its own valve, sensor, and settings |
 | **Post-cycle summary notification** | Sends a per-zone summary (moisture, duration, skip reason) after every cycle, and notifies immediately on rain-skip |
-| **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM); zones whose soil is still below the skip threshold are watered again using a shorter per-zone evening duration |
+| **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM) using the stored morning forecast classification; zones whose soil is still below the skip threshold are watered again using a shorter per-zone evening duration |
 
 ---
 
@@ -50,7 +50,12 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 3. **Valve entities** — `switch`, `valve`, or `input_boolean` entities that
    control each water valve.
 
-4. **Soil moisture sensors** *(optional)* — any `sensor` entity reporting
+4. **Morning forecast cache helper** *(optional but recommended for evening checks)* —
+   an `input_text` helper used to persist the morning forecast classification so
+   the evening hot-day cycle uses the morning weather report instead of
+   re-checking temperatures later in the day.
+
+5. **Soil moisture sensors** *(optional)* — any `sensor` entity reporting
    moisture as a percentage (0–100 %).
 
 ---
@@ -70,6 +75,7 @@ automation from this blueprint.
 | Cool Day Max Temp | 15 °C | High temp below this → use Cool durations |
 | Hot Day Min Temp | 28 °C | High temp at/above this → use Hot durations |
 | Hot Day Evening Check Time | 20:00:00 | Time to run the evening moisture check on hot days |
+| Morning Forecast Cache Helper | *(empty)* | Optional `input_text` helper that stores the morning forecast classification for the evening cycle |
 | Watering Interval | 2 days | Days between watering runs |
 | Notification Service | *(empty)* | Optional notify service (e.g. `notify.mobile_app_my_phone`). If set, cycle-complete and rain-skip summaries are also sent via this service in addition to a persistent notification |
 
@@ -132,13 +138,16 @@ Sunrise + offset
 Evening check time (default 20:00)
        │
        ▼
-  Fetch daily forecast
+  Read stored morning forecast
        │
+       ▼
+  Morning forecast available for today? ──NO──▶ STOP
+       │ YES
        ▼
   Hot day?  ──NO──▶  STOP (no evening watering)
        │ YES
        ▼
-  Precipitation ≥ rain threshold?  ──YES──▶  STOP
+  Morning forecast precipitation ≥ rain threshold?  ──YES──▶  STOP
        │ NO
        ▼
   ┌────┴──────────────┐

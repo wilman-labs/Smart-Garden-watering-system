@@ -52,8 +52,9 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 
 4. **Morning forecast cache helper** *(optional but recommended for evening checks)* —
    an `input_text` helper used to persist the morning forecast classification so
-   the evening hot-day cycle uses the morning weather report instead of
-   re-checking temperatures later in the day.
+   the evening hot-day cycle can use the morning weather report instead of
+   re-checking temperatures later in the day. When not configured, the blueprint
+   falls back to the live evening forecast.
 
 5. **Soil moisture sensors** *(optional)* — any `sensor` entity reporting
    moisture as a percentage (0–100 %).
@@ -75,7 +76,7 @@ automation from this blueprint.
 | Cool Day Max Temp | 15 °C | High temp below this → use Cool durations |
 | Hot Day Min Temp | 28 °C | High temp at/above this → use Hot durations |
 | Hot Day Evening Check Time | 20:00:00 | Time to run the evening moisture check on hot days |
-| Morning Forecast Cache Helper | *(empty)* | Optional `input_text` helper that stores the morning forecast classification for the evening cycle |
+| Morning Forecast Cache Helper | *(empty)* | Optional `input_text` helper that stores the morning forecast classification for the evening cycle; when unset, the blueprint falls back to the live evening forecast |
 | Watering Interval | 2 days | Days between watering runs |
 | Notification Service | *(empty)* | Optional notify service (e.g. `notify.mobile_app_my_phone`). If set, cycle-complete and rain-skip summaries are also sent via this service in addition to a persistent notification |
 
@@ -140,14 +141,13 @@ Evening check time (default 20:00)
        ▼
   Read stored morning forecast
        │
-       ▼
-  Morning forecast available for today? ──NO──▶ STOP
-       │ YES
+       ├── unavailable? ──▶ Fetch live evening forecast
+       │
        ▼
   Hot day?  ──NO──▶  STOP (no evening watering)
        │ YES
        ▼
-  Morning forecast precipitation ≥ rain threshold?  ──YES──▶  STOP
+  Forecast precipitation ≥ rain threshold?  ──YES──▶  STOP
        │ NO
        ▼
   ┌────┴──────────────┐

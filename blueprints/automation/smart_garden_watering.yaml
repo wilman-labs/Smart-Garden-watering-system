@@ -839,15 +839,26 @@ action:
       - alias: "Evening — read stored morning forecast"
         variables:
           _today_key: "{{ now().strftime('%Y-%m-%d') }}"
+          eve_high_temp: 20
+          eve_precipitation: 0
+          eve_day_type: "warm"
+          eve_rain_skip: false
+          eve_forecast_source: "live"
           _morning_cache_raw: >-
             {% if morning_forecast_cache != ''
-                  and states(morning_forecast_cache) not in ['unknown', 'unavailable', ''] %}
+                  and states(morning_forecast_cache) not in ['unknown', 'unavailable'] %}
               {{ states(morning_forecast_cache) }}
             {% else %}
               {{ '' }}
             {% endif %}
           _morning_cache_parts: >-
             {{ _morning_cache_raw.split(';') if _morning_cache_raw != '' else [] }}
+          # Expected order:
+          # 0=date=YYYY-MM-DD
+          # 1=high=<number>
+          # 2=precipitation=<number>
+          # 3=day_type=cool|warm|hot
+          # 4=rain_skip=true|false
           morning_cache_valid: >-
             {{ (_morning_cache_parts | count) == 5
                and _morning_cache_parts[0].startswith('date=')
@@ -855,7 +866,9 @@ action:
                and _morning_cache_parts[1].startswith('high=')
                and _morning_cache_parts[2].startswith('precipitation=')
                and _morning_cache_parts[3].startswith('day_type=')
-               and _morning_cache_parts[4].startswith('rain_skip=') }}
+               and _morning_cache_parts[3].split('=', 1)[1] in ['cool', 'warm', 'hot']
+               and _morning_cache_parts[4].startswith('rain_skip=')
+               and _morning_cache_parts[4].split('=', 1)[1] in ['true', 'false'] }}
       - choose:
           - conditions:
               - condition: template
@@ -1400,6 +1413,7 @@ action:
             value_template: "{{ morning_forecast_cache != '' }}"
         sequence:
           # Cache format: date=YYYY-MM-DD;high=...;precipitation=...;day_type=...;rain_skip=true|false
+          # Stored values come from numeric weather fields and the fixed cool/warm/hot enum.
           - service: input_text.set_value
             target:
               entity_id: "{{ morning_forecast_cache }}"

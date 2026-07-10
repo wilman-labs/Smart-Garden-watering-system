@@ -846,11 +846,16 @@ action:
             {% else %}
               {{ '' }}
             {% endif %}
-          _morning_cache: >-
-            {{ (_morning_cache_raw | from_json) if _morning_cache_raw != '' else {} }}
+          _morning_cache_parts: >-
+            {{ _morning_cache_raw.split(';') if _morning_cache_raw != '' else [] }}
           morning_cache_valid: >-
-            {{ _morning_cache.get('date', '') == _today_key
-               and _morning_cache.get('day_type', '') != '' }}
+            {{ (_morning_cache_parts | count) == 5
+               and _morning_cache_parts[0].startswith('date=')
+               and _morning_cache_parts[0].split('=', 1)[1] == _today_key
+               and _morning_cache_parts[1].startswith('high=')
+               and _morning_cache_parts[2].startswith('precipitation=')
+               and _morning_cache_parts[3].startswith('day_type=')
+               and _morning_cache_parts[4].startswith('rain_skip=') }}
       - choose:
           - conditions:
               - condition: template
@@ -859,13 +864,13 @@ action:
               - alias: "Evening — use stored morning forecast"
                 variables:
                   eve_high_temp: >-
-                    {{ _morning_cache.get('high', 20) | float(20) }}
+                    {{ _morning_cache_parts[1].split('=', 1)[1] | float(20) }}
                   eve_precipitation: >-
-                    {{ _morning_cache.get('precipitation', 0) | float(0) }}
+                    {{ _morning_cache_parts[2].split('=', 1)[1] | float(0) }}
                   eve_day_type: >-
-                    {{ _morning_cache.get('day_type', 'unknown') | trim }}
+                    {{ _morning_cache_parts[3].split('=', 1)[1] | trim }}
                   eve_rain_skip: >-
-                    {{ _morning_cache.get('rain_skip', false) | bool(false) }}
+                    {{ _morning_cache_parts[4].split('=', 1)[1] | lower == 'true' }}
                   eve_forecast_source: "morning"
         default:
           - alias: "Evening — fetch daily weather forecast"
@@ -1394,19 +1399,17 @@ action:
           - condition: template
             value_template: "{{ morning_forecast_cache != '' }}"
         sequence:
-          # Cache payload is JSON with keys: date, high, precipitation, day_type, rain_skip
+          # Cache format: date=YYYY-MM-DD;high=...;precipitation=...;day_type=...;rain_skip=true|false
           - service: input_text.set_value
             target:
               entity_id: "{{ morning_forecast_cache }}"
             data:
               value: >-
-                {{ {
-                     'date': now().strftime('%Y-%m-%d'),
-                     'high': today_high_temp,
-                     'precipitation': today_precipitation,
-                     'day_type': day_type | trim,
-                     'rain_skip': rain_skip
-                   } | to_json }}
+                {{ 'date=' ~ now().strftime('%Y-%m-%d') ~
+                   ';high=' ~ (today_high_temp | string) ~
+                   ';precipitation=' ~ (today_precipitation | string) ~
+                   ';day_type=' ~ (day_type | trim) ~
+                   ';rain_skip=' ~ ('true' if rain_skip else 'false') }}
 
   # ── 3. Abort if too much rain is forecast ────────────────────────
   - alias: "Skip all watering — rain threshold exceeded"

@@ -141,7 +141,7 @@ Evening check time (default 20:00)
        ▼
   Read stored morning forecast
        │
-       ├── unavailable? ──▶ Fetch live evening forecast
+       ├── unavailable or not configured? ──▶ Fetch live evening forecast
        │
        ▼
   Hot day?  ──NO──▶  STOP (no evening watering)

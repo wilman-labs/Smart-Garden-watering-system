@@ -855,16 +855,18 @@ action:
               - condition: template
                 value_template: "{{ morning_cache_valid }}"
             sequence:
+              - variables:
+                  _morning_cache_parts: "{{ _morning_cache_raw.split('|') }}"
               - alias: "Evening — use stored morning forecast"
                 variables:
                   eve_high_temp: >-
-                    {{ _morning_cache_raw.split('|')[1] | float(20) }}
+                    {{ _morning_cache_parts[1] | float(20) }}
                   eve_precipitation: >-
-                    {{ _morning_cache_raw.split('|')[2] | float(0) }}
+                    {{ _morning_cache_parts[2] | float(0) }}
                   eve_day_type: >-
-                    {{ _morning_cache_raw.split('|')[3] | trim }}
+                    {{ _morning_cache_parts[3] | trim }}
                   eve_rain_skip: >-
-                    {{ (_morning_cache_raw.split('|')[4] | int(0)) == 1 }}
+                    {{ (_morning_cache_parts[4] | int(0)) == 1 }}
                   eve_forecast_source: "morning"
         default:
           - alias: "Evening — fetch daily weather forecast"
@@ -1393,6 +1395,7 @@ action:
           - condition: template
             value_template: "{{ morning_forecast_cache != '' }}"
         sequence:
+          # Cache format: YYYY-MM-DD|forecast_high|precipitation|day_type|rain_skip
           - service: input_text.set_value
             target:
               entity_id: "{{ morning_forecast_cache }}"

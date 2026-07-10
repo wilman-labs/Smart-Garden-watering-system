@@ -845,9 +845,9 @@ action:
           eve_day_type: "warm"
           eve_rain_skip: false
           eve_forecast_source: "live"
+          eve_forecast_note: ""
           _morning_cache_raw: >-
-            {% if morning_forecast_cache != ''
-                  and states(morning_forecast_cache) not in ['unknown', 'unavailable'] %}
+            {% if morning_forecast_cache != '' and has_value(morning_forecast_cache) %}
               {{ states(morning_forecast_cache) }}
             {% else %}
               {{ '' }}
@@ -862,6 +862,9 @@ action:
           # 4=rain_skip=true|false
           # Numeric fields are written from morning forecast floats; the float
           # defaults below are defensive if the helper is edited manually.
+          # Cached data is treated as valid only for the current date; stale or
+          # future-dated cache entries automatically fall back to the live
+          # evening forecast path.
           morning_cache_valid: >-
             {{ (_morning_cache_parts | count) == 5
                and _morning_cache_parts[0].startswith('date=')
@@ -886,8 +889,9 @@ action:
                   eve_day_type: >-
                     {{ _morning_cache_parts[3].split('=', 1)[1] | trim }}
                   eve_rain_skip: >-
-                    {{ _morning_cache_parts[4].split('=', 1)[1] | lower == 'true' }}
+                    {{ _morning_cache_parts[4].split('=', 1)[1] | lower in ['true', '1', 'yes'] }}
                   eve_forecast_source: "morning"
+                  eve_forecast_note: ""
         default:
           - alias: "Evening — fetch daily weather forecast"
             service: weather.get_forecasts
@@ -911,6 +915,14 @@ action:
                 {% endif %}
               eve_rain_skip: "{{ eve_precipitation >= (rain_threshold | float(0)) }}"
               eve_forecast_source: "live"
+              eve_forecast_note: >-
+                {% if morning_forecast_cache == '' %}
+                  Using live evening forecast — morning cache helper not configured.
+                {% elif _morning_cache_raw == '' %}
+                  Using live evening forecast — morning cache helper has no usable value.
+                {% else %}
+                  Using live evening forecast — morning cache was stale or malformed.
+                {% endif %}
 
       # Stop if it's not a hot day — no evening watering needed
       - if:
@@ -1340,6 +1352,9 @@ action:
             📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
             🌡 {{ 'Morning forecast high' if eve_forecast_source == 'morning' else 'Evening forecast high' }}: {{ eve_high_temp }}°C
             🌧 Rain: {{ eve_precipitation }} mm
+            {%- if eve_forecast_note | trim %}
+            ℹ {{ eve_forecast_note | trim }}
+            {%- endif %}
             {%- set ns = namespace(parts=[]) -%}
             {%- if zone_1_enabled | bool(false) -%}
             {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}

@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Garden Watering System v0.6
+  name: Smart Garden Watering System v0.7
   description: >-
     Automatic 4-zone garden watering system that adapts to daily weather forecasts
     and optional soil moisture sensors.
@@ -32,6 +32,13 @@ blueprint:
       zones whose soil is still below the skip threshold are watered again using
       a shorter per-zone evening duration.
       Each zone has an option to water even when no sensor is fitted or responding.
+
+    - **Reduced water consumption mode** — toggle an `input_boolean` helper from
+      any HA dashboard to activate conservation mode. When active: food zones
+      (per-zone checkbox) water at a globally-configurable percentage of their
+      normal duration (default 50 %) triggered 2.5 hours before sunrise; non-food
+      zones are skipped entirely; the evening hot-day check is disabled. The normal
+      sunrise cycle is suppressed while this mode is on.
 
 
     **Pre-requisites**
@@ -146,6 +153,36 @@ blueprint:
           selector:
             entity:
               domain: input_text
+
+        reduced_water_mode:
+          name: Reduced Water Consumption Mode Switch (optional)
+          description: >-
+            input_boolean helper that acts as a GUI toggle for reduced water
+            consumption mode. When this helper is ON: food zones (see per-zone
+            checkbox) are watered at the configured percentage of their normal
+            duration, 2.5 hours before sunrise; non-food zones are skipped
+            entirely; the evening hot-day check is disabled; the normal
+            sunrise-offset cycle is suppressed. Leave empty to disable this
+            feature entirely.
+          default: ""
+          selector:
+            entity:
+              domain: input_boolean
+
+        reduced_water_food_zone_percent:
+          name: Reduced Mode — Food Zone Duration (%)
+          description: >-
+            When reduced water consumption mode is active, food zones are watered
+            for this percentage of their normal (cool / warm / hot) duration.
+            Non-food zones are skipped entirely. Default is 50 %.
+          default: 50
+          selector:
+            number:
+              min: 10
+              max: 100
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
 
     # ── Notifications ───────────────────────────────────────────────
     notifications:
@@ -324,6 +361,16 @@ blueprint:
           selector:
             boolean: {}
 
+        zone_1_is_food_zone:
+          name: "Zone 1 — Food Zone"
+          description: >-
+            Mark Zone 1 as a food-producing zone (e.g. vegetable bed, herb garden).
+            In reduced water consumption mode, food zones are watered at the
+            configured reduced duration; non-food zones are skipped entirely.
+          default: false
+          selector:
+            boolean: {}
+
     # ── Zone 2 ─────────────────────────────────────────────────────
     zone_2:
       name: "Zone 2"
@@ -460,6 +507,16 @@ blueprint:
             check even if no moisture sensor is configured or the sensor is
             not responding.
           default: true
+          selector:
+            boolean: {}
+
+        zone_2_is_food_zone:
+          name: "Zone 2 — Food Zone"
+          description: >-
+            Mark Zone 2 as a food-producing zone (e.g. vegetable bed, herb garden).
+            In reduced water consumption mode, food zones are watered at the
+            configured reduced duration; non-food zones are skipped entirely.
+          default: false
           selector:
             boolean: {}
 
@@ -602,6 +659,16 @@ blueprint:
           selector:
             boolean: {}
 
+        zone_3_is_food_zone:
+          name: "Zone 3 — Food Zone"
+          description: >-
+            Mark Zone 3 as a food-producing zone (e.g. vegetable bed, herb garden).
+            In reduced water consumption mode, food zones are watered at the
+            configured reduced duration; non-food zones are skipped entirely.
+          default: false
+          selector:
+            boolean: {}
+
     # ── Zone 4 ─────────────────────────────────────────────────────
     zone_4:
       name: "Zone 4"
@@ -741,6 +808,16 @@ blueprint:
           selector:
             boolean: {}
 
+        zone_4_is_food_zone:
+          name: "Zone 4 — Food Zone"
+          description: >-
+            Mark Zone 4 as a food-producing zone (e.g. vegetable bed, herb garden).
+            In reduced water consumption mode, food zones are watered at the
+            configured reduced duration; non-food zones are skipped entirely.
+          default: false
+          selector:
+            boolean: {}
+
 # ── Trigger ──────────────────────────────────────────────────────────
 trigger:
   - platform: sun
@@ -750,6 +827,10 @@ trigger:
   - platform: time
     at: !input evening_check_time
     id: evening
+  - platform: sun
+    event: sunrise
+    offset: "-02:30:00"
+    id: reduced_morning
 
 # Run one instance at a time; silently ignore retriggers while running.
 mode: single
@@ -763,6 +844,8 @@ variables:
   temperature_hot_min: !input temperature_hot_min
   morning_forecast_cache: !input morning_forecast_cache
   notify_target: !input notify_target
+  reduced_water_mode: !input reduced_water_mode
+  reduced_water_food_zone_percent: !input reduced_water_food_zone_percent
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
   zone_1_name: !input zone_1_name
@@ -777,6 +860,7 @@ variables:
   zone_1_hot_duration: !input zone_1_hot_duration
   zone_1_hot_evening_duration: !input zone_1_hot_evening_duration
   zone_1_evening_water_no_sensor: !input zone_1_evening_water_no_sensor
+  zone_1_is_food_zone: !input zone_1_is_food_zone
   # Zone 2
   zone_2_enabled: !input zone_2_enabled
   zone_2_name: !input zone_2_name
@@ -791,6 +875,7 @@ variables:
   zone_2_hot_duration: !input zone_2_hot_duration
   zone_2_hot_evening_duration: !input zone_2_hot_evening_duration
   zone_2_evening_water_no_sensor: !input zone_2_evening_water_no_sensor
+  zone_2_is_food_zone: !input zone_2_is_food_zone
   # Zone 3
   zone_3_enabled: !input zone_3_enabled
   zone_3_name: !input zone_3_name
@@ -805,6 +890,7 @@ variables:
   zone_3_hot_duration: !input zone_3_hot_duration
   zone_3_hot_evening_duration: !input zone_3_hot_evening_duration
   zone_3_evening_water_no_sensor: !input zone_3_evening_water_no_sensor
+  zone_3_is_food_zone: !input zone_3_is_food_zone
   # Zone 4
   zone_4_enabled: !input zone_4_enabled
   zone_4_name: !input zone_4_name
@@ -819,6 +905,7 @@ variables:
   zone_4_hot_duration: !input zone_4_hot_duration
   zone_4_hot_evening_duration: !input zone_4_hot_evening_duration
   zone_4_evening_water_no_sensor: !input zone_4_evening_water_no_sensor
+  zone_4_is_food_zone: !input zone_4_is_food_zone
 
 # ── Action ───────────────────────────────────────────────────────────
 action:
@@ -828,12 +915,671 @@ action:
       _trigger_id: "{{ trigger.id | default('morning') }}"
 
   # ════════════════════════════════════════════════════════════════
+  # REDUCED WATER CONSUMPTION CYCLE (2.5 h before sunrise)
+  # ════════════════════════════════════════════════════════════════
+  - if:
+      - condition: template
+        value_template: "{{ _trigger_id == 'reduced_morning' }}"
+    then:
+
+      # Stop immediately if the reduced-mode switch is not configured or not ON
+      - if:
+          - condition: template
+            value_template: >-
+              {{ reduced_water_mode == '' or
+                 states(reduced_water_mode) not in ['on'] }}
+        then:
+          - stop: "Reduced morning trigger — reduced water mode is not active"
+
+      # Fetch today's daily forecast
+      - alias: "Reduced — fetch daily weather forecast"
+        service: weather.get_forecasts
+        target:
+          entity_id: "{{ weather_entity }}"
+        data:
+          type: daily
+        response_variable: rw_weather_response
+
+      # Parse forecast
+      - alias: "Reduced — parse forecast"
+        variables:
+          _rw_today: "{{ rw_weather_response[weather_entity]['forecast'][0] }}"
+          rw_precipitation: "{{ _rw_today.precipitation | default(0) | float(0) }}"
+          rw_high_temp: "{{ _rw_today.temperature | default(20) | float(20) }}"
+          rw_day_type: >-
+            {% if rw_high_temp < (temperature_cool_max | float(15)) %}
+              cool
+            {% elif rw_high_temp >= (temperature_hot_min | float(28)) %}
+              hot
+            {% else %}
+              warm
+            {% endif %}
+          rw_rain_skip: "{{ rw_precipitation >= (rain_threshold | float(0)) }}"
+
+      # Stop if rain threshold exceeded
+      - if:
+          - condition: template
+            value_template: "{{ rw_rain_skip }}"
+        then:
+          - alias: "Reduced — notify rain skip"
+            service: persistent_notification.create
+            data:
+              title: "🌧 Garden Watering — Reduced Mode Skipped (Rain)"
+              notification_id: garden_watering_reduced
+              message: |-
+                🌿 Reduced water consumption mode — all zones skipped today.
+
+                🌧 Forecast rain: {{ rw_precipitation }} mm — threshold: {{ rain_threshold }} mm
+                🌡 Forecast high: {{ rw_high_temp }}°C
+          - alias: "Reduced — notify rain skip (custom service)"
+            choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ notify_target != '' }}"
+                sequence:
+                  - service: "{{ notify_target }}"
+                    data:
+                      title: "🌧 Garden Watering — Reduced Mode Skipped (Rain)"
+                      message: |-
+                        🌿 Reduced water consumption mode — all zones skipped today.
+                        🌧 Forecast rain: {{ rw_precipitation }} mm — threshold: {{ rain_threshold }} mm
+                        🌡 Forecast high: {{ rw_high_temp }}°C
+          - stop: "Reduced mode — rain threshold exceeded"
+
+      # ── Evaluate each zone ──────────────────────────────────────
+      - alias: "Reduced — Zone 1 evaluate"
+        variables:
+          rw_z1_moisture_val: >-
+            {% if zone_1_moisture_sensor != '' and
+                  states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_1_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z1_days_elapsed: >-
+            {% if zone_1_last_watered != '' and
+                  states(zone_1_last_watered) not in ['unknown', 'unavailable', ''] %}
+              {{ ((as_timestamp(now()) - as_timestamp(states(zone_1_last_watered), 0)) / 86400) | float(0) }}
+            {% else %}
+              999
+            {% endif %}
+          rw_z1_interval_due: "{{ rw_z1_days_elapsed >= (zone_1_watering_interval_days | int(2)) }}"
+          rw_z1_force_water: >-
+            {% set thr = zone_1_moisture_water_threshold | int(0) %}
+            {% if rw_z1_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z1_moisture_val < thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z1_skip_moisture: >-
+            {% set thr = zone_1_moisture_skip_threshold | int(0) %}
+            {% if rw_z1_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z1_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z1_base_duration: >-
+            {% if rw_day_type | trim == 'cool' %}
+              {{ zone_1_cool_duration | int(5) }}
+            {% elif rw_day_type | trim == 'hot' %}
+              {{ zone_1_hot_duration | int(15) }}
+            {% else %}
+              {{ zone_1_warm_duration | int(10) }}
+            {% endif %}
+          rw_z1_duration: >-
+            {{ [1, ((rw_z1_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
+          rw_z1_should_water: >-
+            {{ (zone_1_enabled | bool(false))
+               and (zone_1_valve != '')
+               and (zone_1_is_food_zone | bool(false))
+               and ((rw_z1_interval_due | bool(false)) or (rw_z1_force_water | bool(false)))
+               and not (rw_z1_skip_moisture | bool(false)) }}
+          rw_z1_result: >-
+            {% if not (zone_1_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_1_valve == '' %}
+              ⏭ No valve configured
+            {% elif not (zone_1_is_food_zone | bool(false)) %}
+              ⏭ Skipped — not a food zone
+            {% elif rw_z1_skip_moisture | bool(false) %}
+              ⏭ Skipped — soil moisture {{ rw_z1_moisture_val | round(0) | int }}% above {{ zone_1_moisture_skip_threshold }}%
+            {% elif not (rw_z1_interval_due | bool(false)) and not (rw_z1_force_water | bool(false)) %}
+              ⏭ Skipped — {{ rw_z1_days_elapsed | round(0) | int }} days into a {{ zone_1_watering_interval_days }} day cycle
+            {% else %}
+              💧 Watered {{ rw_z1_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+            {% endif %}
+          rw_z1_moisture_line: >-
+            {% if zone_1_moisture_sensor != '' and rw_z1_moisture_val >= 0 %}
+              Moisture : {{ rw_z1_moisture_val | round(0) | int }}%
+            {% elif zone_1_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      - alias: "Reduced — Zone 2 evaluate"
+        variables:
+          rw_z2_moisture_val: >-
+            {% if zone_2_moisture_sensor != '' and
+                  states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_2_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z2_days_elapsed: >-
+            {% if zone_2_last_watered != '' and
+                  states(zone_2_last_watered) not in ['unknown', 'unavailable', ''] %}
+              {{ ((as_timestamp(now()) - as_timestamp(states(zone_2_last_watered), 0)) / 86400) | float(0) }}
+            {% else %}
+              999
+            {% endif %}
+          rw_z2_interval_due: "{{ rw_z2_days_elapsed >= (zone_2_watering_interval_days | int(2)) }}"
+          rw_z2_force_water: >-
+            {% set thr = zone_2_moisture_water_threshold | int(0) %}
+            {% if rw_z2_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z2_moisture_val < thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z2_skip_moisture: >-
+            {% set thr = zone_2_moisture_skip_threshold | int(0) %}
+            {% if rw_z2_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z2_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z2_base_duration: >-
+            {% if rw_day_type | trim == 'cool' %}
+              {{ zone_2_cool_duration | int(5) }}
+            {% elif rw_day_type | trim == 'hot' %}
+              {{ zone_2_hot_duration | int(15) }}
+            {% else %}
+              {{ zone_2_warm_duration | int(10) }}
+            {% endif %}
+          rw_z2_duration: >-
+            {{ [1, ((rw_z2_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
+          rw_z2_should_water: >-
+            {{ (zone_2_enabled | bool(false))
+               and (zone_2_valve != '')
+               and (zone_2_is_food_zone | bool(false))
+               and ((rw_z2_interval_due | bool(false)) or (rw_z2_force_water | bool(false)))
+               and not (rw_z2_skip_moisture | bool(false)) }}
+          rw_z2_result: >-
+            {% if not (zone_2_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_2_valve == '' %}
+              ⏭ No valve configured
+            {% elif not (zone_2_is_food_zone | bool(false)) %}
+              ⏭ Skipped — not a food zone
+            {% elif rw_z2_skip_moisture | bool(false) %}
+              ⏭ Skipped — soil moisture {{ rw_z2_moisture_val | round(0) | int }}% above {{ zone_2_moisture_skip_threshold }}%
+            {% elif not (rw_z2_interval_due | bool(false)) and not (rw_z2_force_water | bool(false)) %}
+              ⏭ Skipped — {{ rw_z2_days_elapsed | round(0) | int }} days into a {{ zone_2_watering_interval_days }} day cycle
+            {% else %}
+              💧 Watered {{ rw_z2_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+            {% endif %}
+          rw_z2_moisture_line: >-
+            {% if zone_2_moisture_sensor != '' and rw_z2_moisture_val >= 0 %}
+              Moisture : {{ rw_z2_moisture_val | round(0) | int }}%
+            {% elif zone_2_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      - alias: "Reduced — Zone 3 evaluate"
+        variables:
+          rw_z3_moisture_val: >-
+            {% if zone_3_moisture_sensor != '' and
+                  states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_3_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z3_days_elapsed: >-
+            {% if zone_3_last_watered != '' and
+                  states(zone_3_last_watered) not in ['unknown', 'unavailable', ''] %}
+              {{ ((as_timestamp(now()) - as_timestamp(states(zone_3_last_watered), 0)) / 86400) | float(0) }}
+            {% else %}
+              999
+            {% endif %}
+          rw_z3_interval_due: "{{ rw_z3_days_elapsed >= (zone_3_watering_interval_days | int(2)) }}"
+          rw_z3_force_water: >-
+            {% set thr = zone_3_moisture_water_threshold | int(0) %}
+            {% if rw_z3_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z3_moisture_val < thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z3_skip_moisture: >-
+            {% set thr = zone_3_moisture_skip_threshold | int(0) %}
+            {% if rw_z3_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z3_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z3_base_duration: >-
+            {% if rw_day_type | trim == 'cool' %}
+              {{ zone_3_cool_duration | int(5) }}
+            {% elif rw_day_type | trim == 'hot' %}
+              {{ zone_3_hot_duration | int(15) }}
+            {% else %}
+              {{ zone_3_warm_duration | int(10) }}
+            {% endif %}
+          rw_z3_duration: >-
+            {{ [1, ((rw_z3_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
+          rw_z3_should_water: >-
+            {{ (zone_3_enabled | bool(false))
+               and (zone_3_valve != '')
+               and (zone_3_is_food_zone | bool(false))
+               and ((rw_z3_interval_due | bool(false)) or (rw_z3_force_water | bool(false)))
+               and not (rw_z3_skip_moisture | bool(false)) }}
+          rw_z3_result: >-
+            {% if not (zone_3_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_3_valve == '' %}
+              ⏭ No valve configured
+            {% elif not (zone_3_is_food_zone | bool(false)) %}
+              ⏭ Skipped — not a food zone
+            {% elif rw_z3_skip_moisture | bool(false) %}
+              ⏭ Skipped — soil moisture {{ rw_z3_moisture_val | round(0) | int }}% above {{ zone_3_moisture_skip_threshold }}%
+            {% elif not (rw_z3_interval_due | bool(false)) and not (rw_z3_force_water | bool(false)) %}
+              ⏭ Skipped — {{ rw_z3_days_elapsed | round(0) | int }} days into a {{ zone_3_watering_interval_days }} day cycle
+            {% else %}
+              💧 Watered {{ rw_z3_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+            {% endif %}
+          rw_z3_moisture_line: >-
+            {% if zone_3_moisture_sensor != '' and rw_z3_moisture_val >= 0 %}
+              Moisture : {{ rw_z3_moisture_val | round(0) | int }}%
+            {% elif zone_3_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      - alias: "Reduced — Zone 4 evaluate"
+        variables:
+          rw_z4_moisture_val: >-
+            {% if zone_4_moisture_sensor != '' and
+                  states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_4_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z4_days_elapsed: >-
+            {% if zone_4_last_watered != '' and
+                  states(zone_4_last_watered) not in ['unknown', 'unavailable', ''] %}
+              {{ ((as_timestamp(now()) - as_timestamp(states(zone_4_last_watered), 0)) / 86400) | float(0) }}
+            {% else %}
+              999
+            {% endif %}
+          rw_z4_interval_due: "{{ rw_z4_days_elapsed >= (zone_4_watering_interval_days | int(2)) }}"
+          rw_z4_force_water: >-
+            {% set thr = zone_4_moisture_water_threshold | int(0) %}
+            {% if rw_z4_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z4_moisture_val < thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z4_skip_moisture: >-
+            {% set thr = zone_4_moisture_skip_threshold | int(0) %}
+            {% if rw_z4_moisture_val >= 0 and thr > 0 %}
+              {{ rw_z4_moisture_val > thr }}
+            {% else %}
+              false
+            {% endif %}
+          rw_z4_base_duration: >-
+            {% if rw_day_type | trim == 'cool' %}
+              {{ zone_4_cool_duration | int(5) }}
+            {% elif rw_day_type | trim == 'hot' %}
+              {{ zone_4_hot_duration | int(15) }}
+            {% else %}
+              {{ zone_4_warm_duration | int(10) }}
+            {% endif %}
+          rw_z4_duration: >-
+            {{ [1, ((rw_z4_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
+          rw_z4_should_water: >-
+            {{ (zone_4_enabled | bool(false))
+               and (zone_4_valve != '')
+               and (zone_4_is_food_zone | bool(false))
+               and ((rw_z4_interval_due | bool(false)) or (rw_z4_force_water | bool(false)))
+               and not (rw_z4_skip_moisture | bool(false)) }}
+          rw_z4_result: >-
+            {% if not (zone_4_enabled | bool(false)) %}
+              ⏭ Disabled
+            {% elif zone_4_valve == '' %}
+              ⏭ No valve configured
+            {% elif not (zone_4_is_food_zone | bool(false)) %}
+              ⏭ Skipped — not a food zone
+            {% elif rw_z4_skip_moisture | bool(false) %}
+              ⏭ Skipped — soil moisture {{ rw_z4_moisture_val | round(0) | int }}% above {{ zone_4_moisture_skip_threshold }}%
+            {% elif not (rw_z4_interval_due | bool(false)) and not (rw_z4_force_water | bool(false)) %}
+              ⏭ Skipped — {{ rw_z4_days_elapsed | round(0) | int }} days into a {{ zone_4_watering_interval_days }} day cycle
+            {% else %}
+              💧 Watered {{ rw_z4_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+            {% endif %}
+          rw_z4_moisture_line: >-
+            {% if zone_4_moisture_sensor != '' and rw_z4_moisture_val >= 0 %}
+              Moisture : {{ rw_z4_moisture_val | round(0) | int }}%
+            {% elif zone_4_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ── Execute reduced zones — parallel ────────────────────────
+      - alias: "Reduced — execute watering parallel"
+        parallel:
+          - sequence:
+              - alias: "Reduced — Zone 1 water if due"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ rw_z1_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_1_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Reduced — Zone 1 check valve responded"
+                        variables:
+                          rw_z1_valve_offline: "{{ states(zone_1_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ rw_z1_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_1_valve }}"
+                              - variables:
+                                  rw_z1_should_water: false
+                                  rw_z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ rw_z1_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_1_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_1_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_1_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - sequence:
+              - alias: "Reduced — Zone 2 water if due"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ rw_z2_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_2_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Reduced — Zone 2 check valve responded"
+                        variables:
+                          rw_z2_valve_offline: "{{ states(zone_2_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ rw_z2_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_2_valve }}"
+                              - variables:
+                                  rw_z2_should_water: false
+                                  rw_z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ rw_z2_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_2_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_2_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_2_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - sequence:
+              - alias: "Reduced — Zone 3 water if due"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ rw_z3_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_3_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Reduced — Zone 3 check valve responded"
+                        variables:
+                          rw_z3_valve_offline: "{{ states(zone_3_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ rw_z3_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_3_valve }}"
+                              - variables:
+                                  rw_z3_should_water: false
+                                  rw_z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ rw_z3_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_3_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_3_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_3_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+          - sequence:
+              - alias: "Reduced — Zone 4 water if due"
+                choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ rw_z4_should_water }}"
+                    sequence:
+                      - service: homeassistant.turn_on
+                        target:
+                          entity_id: "{{ zone_4_valve }}"
+                      - delay:
+                          seconds: 2
+                      - alias: "Reduced — Zone 4 check valve responded"
+                        variables:
+                          rw_z4_valve_offline: "{{ states(zone_4_valve) in ['unavailable', 'unknown'] }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ rw_z4_valve_offline }}"
+                            sequence:
+                              - service: homeassistant.turn_off
+                                target:
+                                  entity_id: "{{ zone_4_valve }}"
+                              - variables:
+                                  rw_z4_should_water: false
+                                  rw_z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
+                        default:
+                          - delay:
+                              minutes: "{{ rw_z4_duration | int }}"
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: "{{ zone_4_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ zone_4_last_watered != '' }}"
+                                sequence:
+                                  - service: input_datetime.set_datetime
+                                    target:
+                                      entity_id: "{{ zone_4_last_watered }}"
+                                    data:
+                                      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+      # ── Reduced — post-watering moisture update ──────────────────
+      - alias: "Reduced — update moisture lines post-watering"
+        variables:
+          rw_z1_moisture_end: >-
+            {% if zone_1_moisture_sensor != '' and
+                  states(zone_1_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_1_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z1_moisture_line: >-
+            {% if rw_z1_should_water and zone_1_moisture_sensor != '' and rw_z1_moisture_val >= 0 %}
+              Moisture : {{ rw_z1_moisture_val | round(0) | int }}% → {{ rw_z1_moisture_end | round(0) | int }}%
+            {% elif zone_1_moisture_sensor != '' and rw_z1_moisture_val >= 0 %}
+              Moisture : {{ rw_z1_moisture_val | round(0) | int }}%
+            {% elif zone_1_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+          rw_z2_moisture_end: >-
+            {% if zone_2_moisture_sensor != '' and
+                  states(zone_2_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_2_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z2_moisture_line: >-
+            {% if rw_z2_should_water and zone_2_moisture_sensor != '' and rw_z2_moisture_val >= 0 %}
+              Moisture : {{ rw_z2_moisture_val | round(0) | int }}% → {{ rw_z2_moisture_end | round(0) | int }}%
+            {% elif zone_2_moisture_sensor != '' and rw_z2_moisture_val >= 0 %}
+              Moisture : {{ rw_z2_moisture_val | round(0) | int }}%
+            {% elif zone_2_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+          rw_z3_moisture_end: >-
+            {% if zone_3_moisture_sensor != '' and
+                  states(zone_3_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_3_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z3_moisture_line: >-
+            {% if rw_z3_should_water and zone_3_moisture_sensor != '' and rw_z3_moisture_val >= 0 %}
+              Moisture : {{ rw_z3_moisture_val | round(0) | int }}% → {{ rw_z3_moisture_end | round(0) | int }}%
+            {% elif zone_3_moisture_sensor != '' and rw_z3_moisture_val >= 0 %}
+              Moisture : {{ rw_z3_moisture_val | round(0) | int }}%
+            {% elif zone_3_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+          rw_z4_moisture_end: >-
+            {% if zone_4_moisture_sensor != '' and
+                  states(zone_4_moisture_sensor) not in ['unknown', 'unavailable'] %}
+              {{ states(zone_4_moisture_sensor) | float(-1) }}
+            {% else %}
+              -1
+            {% endif %}
+          rw_z4_moisture_line: >-
+            {% if rw_z4_should_water and zone_4_moisture_sensor != '' and rw_z4_moisture_val >= 0 %}
+              Moisture : {{ rw_z4_moisture_val | round(0) | int }}% → {{ rw_z4_moisture_end | round(0) | int }}%
+            {% elif zone_4_moisture_sensor != '' and rw_z4_moisture_val >= 0 %}
+              Moisture : {{ rw_z4_moisture_val | round(0) | int }}%
+            {% elif zone_4_moisture_sensor != '' %}
+              Moisture : sensor unavailable
+            {% else %}
+              Moisture : no sensor
+            {% endif %}
+
+      # ── Reduced — summary notification ───────────────────────────
+      - alias: "Reduced — build summary message"
+        variables:
+          _rw_summary: |-
+            🌿 REDUCED WATER CONSUMPTION MODE — {{ reduced_water_food_zone_percent }}% of normal duration
+            📅 {{ now().strftime('%Y-%m-%d %H:%M') }}
+            🌡 Forecast: {{ rw_high_temp }}°C ({{ rw_day_type | trim }} day)
+            🌧 Rain: {{ rw_precipitation }} mm
+            ℹ Food zones watered at {{ reduced_water_food_zone_percent }}% — non-food zones skipped — no evening check
+            {%- set ns = namespace(parts=[]) -%}
+            {%- if zone_1_enabled | bool(false) -%}
+            {%- set z1_label = (zone_1_name | trim) or 'Zone 1' -%}
+            {%- set z1_ml = rw_z1_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z1_label + ': ' + (rw_z1_result | trim) + ('\n' + z1_ml if z1_ml else '')] -%}
+            {%- endif -%}
+            {%- if zone_2_enabled | bool(false) -%}
+            {%- set z2_label = (zone_2_name | trim) or 'Zone 2' -%}
+            {%- set z2_ml = rw_z2_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z2_label + ': ' + (rw_z2_result | trim) + ('\n' + z2_ml if z2_ml else '')] -%}
+            {%- endif -%}
+            {%- if zone_3_enabled | bool(false) -%}
+            {%- set z3_label = (zone_3_name | trim) or 'Zone 3' -%}
+            {%- set z3_ml = rw_z3_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z3_label + ': ' + (rw_z3_result | trim) + ('\n' + z3_ml if z3_ml else '')] -%}
+            {%- endif -%}
+            {%- if zone_4_enabled | bool(false) -%}
+            {%- set z4_label = (zone_4_name | trim) or 'Zone 4' -%}
+            {%- set z4_ml = rw_z4_moisture_line | trim -%}
+            {%- set ns.parts = ns.parts + [z4_label + ': ' + (rw_z4_result | trim) + ('\n' + z4_ml if z4_ml else '')] -%}
+            {%- endif %}
+
+            {{ ns.parts | join('\n\n') }}
+
+      - alias: "Reduced — persistent notification"
+        service: persistent_notification.create
+        data:
+          title: "🌿 Garden Watering — Reduced Mode Cycle"
+          notification_id: garden_watering_reduced
+          message: "{{ _rw_summary }}"
+
+      - alias: "Reduced — notify target"
+        choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ notify_target != '' }}"
+            sequence:
+              - service: "{{ notify_target }}"
+                data:
+                  title: "🌿 Garden Watering — Reduced Mode Cycle"
+                  message: "{{ _rw_summary }}"
+
+      - stop: "Reduced water consumption cycle complete"
+
+  # ════════════════════════════════════════════════════════════════
   # EVENING HOT-DAY CHECK (runs only on the evening time trigger)
   # ════════════════════════════════════════════════════════════════
   - if:
       - condition: template
         value_template: "{{ _trigger_id == 'evening' }}"
     then:
+
+      # Stop immediately when reduced mode is active — no evening watering
+      - if:
+          - condition: template
+            value_template: >-
+              {{ reduced_water_mode != '' and
+                 states(reduced_water_mode) in ['on'] }}
+        then:
+          - stop: "Evening check — reduced water mode is active, evening watering disabled"
 
       # Read the stored morning forecast classification
       - alias: "Evening — read stored morning forecast"
@@ -1399,6 +2145,15 @@ action:
       - stop: "Evening hot-day check complete"
 
   # ── 1. Fetch today's daily forecast ──────────────────────────────
+  # Stop here if reduced water mode is active — that cycle runs on its own trigger
+  - if:
+      - condition: template
+        value_template: >-
+          {{ reduced_water_mode != '' and
+             states(reduced_water_mode) in ['on'] }}
+    then:
+      - stop: "Normal morning cycle suppressed — reduced water mode is active"
+
   - alias: "Fetch daily weather forecast"
     service: weather.get_forecasts
     target:

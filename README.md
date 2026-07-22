@@ -16,7 +16,7 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 | **4 independent zones** | Each zone has its own valve, sensor, and settings |
 | **Post-cycle summary notification** | Sends a per-zone summary (moisture, duration, skip reason) after every cycle, and notifies immediately on rain-skip |
 | **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM) using the stored morning forecast classification; zones whose soil is still below the skip threshold are watered again using a shorter per-zone evening duration |
-| **Reduced water consumption mode** | Toggle an `input_boolean` from any HA dashboard; food zones water at a configurable % of normal duration 2.5 hours (02:30) before sunrise; non-food zones are skipped; evening check is disabled |
+| **Reduced water consumption mode** | Toggle an `input_boolean` from any HA dashboard; food zones water at a configurable % of normal duration 2.5 hours before sunrise; non-food zones are skipped; evening check is disabled |
 
 ---
 
@@ -170,7 +170,7 @@ mode"*.
 ## Logic Flow
 
 ```
-Sunrise − 2:30:00  ← reduced_morning trigger (only fires when mode switch is ON)
+Sunrise − 2:30:00  ← reduced_morning trigger (fires daily; stops unless mode switch is ON)
        │
        ▼
   Reduced water mode ON?  ──NO──▶  STOP (normal cycle handles today)

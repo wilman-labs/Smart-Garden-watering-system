@@ -36,7 +36,7 @@ blueprint:
     - **Reduced water consumption mode** — toggle an `input_boolean` helper from
       any HA dashboard to activate conservation mode. When active: food zones
       (per-zone checkbox) water at a globally-configurable percentage of their
-      normal duration (default 50%) triggered 2.5 hours (02:30) before sunrise; non-food
+      normal duration (default 50%) triggered 2.5 hours before sunrise; non-food
       zones are skipped entirely; the evening hot-day check is disabled. The normal
       sunrise cycle is suppressed while this mode is on.
 
@@ -1046,7 +1046,7 @@ action:
             {% elif not (rw_z1_interval_due | bool(false)) and not (rw_z1_force_water | bool(false)) %}
               ⏭ Skipped — {{ rw_z1_days_elapsed | round(0) | int }} days into a {{ zone_1_watering_interval_days }} day cycle
             {% else %}
-              💧 Watered {{ rw_z1_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+              💧 Watered {{ rw_z1_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% of normal)
             {% endif %}
           rw_z1_moisture_line: >-
             {% if zone_1_moisture_sensor != '' and rw_z1_moisture_val >= 0 %}
@@ -1116,7 +1116,7 @@ action:
             {% elif not (rw_z2_interval_due | bool(false)) and not (rw_z2_force_water | bool(false)) %}
               ⏭ Skipped — {{ rw_z2_days_elapsed | round(0) | int }} days into a {{ zone_2_watering_interval_days }} day cycle
             {% else %}
-              💧 Watered {{ rw_z2_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+              💧 Watered {{ rw_z2_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% of normal)
             {% endif %}
           rw_z2_moisture_line: >-
             {% if zone_2_moisture_sensor != '' and rw_z2_moisture_val >= 0 %}
@@ -1186,7 +1186,7 @@ action:
             {% elif not (rw_z3_interval_due | bool(false)) and not (rw_z3_force_water | bool(false)) %}
               ⏭ Skipped — {{ rw_z3_days_elapsed | round(0) | int }} days into a {{ zone_3_watering_interval_days }} day cycle
             {% else %}
-              💧 Watered {{ rw_z3_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+              💧 Watered {{ rw_z3_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% of normal)
             {% endif %}
           rw_z3_moisture_line: >-
             {% if zone_3_moisture_sensor != '' and rw_z3_moisture_val >= 0 %}
@@ -1256,7 +1256,7 @@ action:
             {% elif not (rw_z4_interval_due | bool(false)) and not (rw_z4_force_water | bool(false)) %}
               ⏭ Skipped — {{ rw_z4_days_elapsed | round(0) | int }} days into a {{ zone_4_watering_interval_days }} day cycle
             {% else %}
-              💧 Watered {{ rw_z4_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% reduced)
+              💧 Watered {{ rw_z4_duration }} min ({{ rw_day_type | trim }} day, {{ reduced_water_food_zone_percent }}% of normal)
             {% endif %}
           rw_z4_moisture_line: >-
             {% if zone_4_moisture_sensor != '' and rw_z4_moisture_val >= 0 %}

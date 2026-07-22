@@ -36,7 +36,7 @@ blueprint:
     - **Reduced water consumption mode** — toggle an `input_boolean` helper from
       any HA dashboard to activate conservation mode. When active: food zones
       (per-zone checkbox) water at a globally-configurable percentage of their
-      normal duration (default 50 %) triggered 2.5 hours before sunrise; non-food
+      normal duration (default 50%) triggered 2.5 hours (02:30) before sunrise; non-food
       zones are skipped entirely; the evening hot-day check is disabled. The normal
       sunrise cycle is suppressed while this mode is on.
 
@@ -174,7 +174,7 @@ blueprint:
           description: >-
             When reduced water consumption mode is active, food zones are watered
             for this percentage of their normal (cool / warm / hot) duration.
-            Non-food zones are skipped entirely. Default is 50 %.
+            Non-food zones are skipped entirely. Default is 50%.
           default: 50
           selector:
             number:

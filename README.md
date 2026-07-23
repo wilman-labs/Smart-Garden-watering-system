@@ -16,6 +16,7 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 | **4 independent zones** | Each zone has its own valve, sensor, and settings |
 | **Post-cycle summary notification** | Sends a per-zone summary (moisture, duration, skip reason) after every cycle, and notifies immediately on rain-skip |
 | **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM) using the stored morning forecast classification; zones whose soil is still below the skip threshold are watered again using a shorter per-zone evening duration |
+| **Reduced water consumption mode** | Toggle an `input_boolean` from any HA dashboard; food zones water at a configurable % of normal duration 2.5 hours before sunrise; non-food zones are skipped; evening check is disabled |
 
 ---
 
@@ -59,6 +60,10 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 5. **Soil moisture sensors** *(optional)* — any `sensor` entity reporting
    moisture as a percentage (0–100 %).
 
+6. **Reduced water consumption mode switch** *(optional)* — an `input_boolean`
+   helper that acts as the GUI toggle for reduced-mode. See
+   [Reduced Water Consumption Mode](#reduced-water-consumption-mode) below.
+
 ---
 
 ## Configuration
@@ -79,6 +84,8 @@ automation from this blueprint.
 | Morning Forecast Cache Helper | *(empty)* | Optional `input_text` helper that stores the morning forecast classification for the evening cycle; when unset, the blueprint falls back to the live evening forecast |
 | Watering Interval | 2 days | Days between watering runs |
 | Notification Service | *(empty)* | Optional notify service (e.g. `notify.mobile_app_my_phone`). If set, cycle-complete and rain-skip summaries are also sent via this service in addition to a persistent notification |
+| **Reduced Water Consumption Mode Switch** | *(empty)* | Optional `input_boolean` helper. When this is ON, reduced mode is active (see below) |
+| **Reduced Mode — Food Zone Duration (%)** | 50% | Percentage of normal duration used for food zones in reduced mode (10–100%) |
 
 ### Per-Zone Settings (repeated for Zones 1–4)
 
@@ -95,14 +102,113 @@ automation from this blueprint.
 | Hot Day Duration | 15 min | Valve open time on a hot day |
 | Hot Day Evening Duration | 8 min | Valve open time for the evening hot-day check (default ≈ half of hot morning duration) |
 | Water if No Sensor (evening) | true | Water in the evening even when no moisture sensor is fitted or the sensor is not responding |
+| **Food Zone** | false | Mark this zone as a food-producing area (vegetable bed, herb garden, etc.). Used by reduced water consumption mode |
+
+---
+
+## Reduced Water Consumption Mode
+
+### What it does
+
+When the mode switch is turned **ON**:
+
+| Zone type | Behaviour |
+|---|---|
+| **Food zone** (checkbox ticked) | Watered at **`Food Zone Duration %`** of its normal cool/warm/hot duration (minimum 1 minute) |
+| **Non-food zone** | Skipped entirely |
+
+Additional effects while the mode is active:
+- The watering cycle fires **2.5 hours before sunrise** instead of at the normal sunrise offset.
+- The **evening hot-day check is disabled**.
+- The normal sunrise-offset cycle is **suppressed** so zones are not watered twice.
+- All notifications carry a 🌿 header and show the percentage applied.
+
+### Step 1 — Create the helper
+
+1. Go to **Settings → Devices & Services → Helpers → + Create Helper**.
+2. Choose **Toggle** (i.e. `input_boolean`).
+3. Name it, e.g. **"Garden Reduced Water Mode"** — Home Assistant will create the
+   entity `input_boolean.garden_reduced_water_mode`.
+
+### Step 2 — Link the helper to the blueprint
+
+Open your automation (or create a new one from the blueprint) and, under
+**General Settings**, set **"Reduced Water Consumption Mode Switch"** to the
+helper you just created.
+
+Also tick the **"Food Zone"** checkbox for every zone that grows edible plants.
+Optionally adjust **"Reduced Mode — Food Zone Duration (%)"** (default 50 %).
+
+### Step 3 — Add a toggle to your dashboard
+
+#### Option A — Lovelace card (recommended)
+
+Add an **Entity** card (or a **Button** card) pointing at your helper:
+
+```yaml
+type: entity
+entity: input_boolean.garden_reduced_water_mode
+name: Reduced Water Mode
+icon: mdi:water-minus
+```
+
+Tap the card to toggle the mode on or off instantly.
+
+#### Option B — via the Helper UI
+
+Go to **Settings → Devices & Services → Helpers**, find the helper, and toggle
+it with the switch shown on the right.
+
+#### Option C — via voice assistant
+
+If you use Google Home, Alexa, or Siri Shortcuts, expose the `input_boolean`
+through your chosen integration and simply say *"Turn on garden reduced water
+mode"*.
 
 ---
 
 ## Logic Flow
 
 ```
+Sunrise − 2:30:00  ← reduced_morning trigger (fires daily; stops unless mode switch is ON)
+       │
+       ▼
+  Reduced water mode ON?  ──NO──▶  STOP (normal cycle handles today)
+       │ YES
+       ▼
+  Fetch daily forecast
+       │
+       ▼
+  Precipitation ≥ rain threshold?  ──YES──▶  STOP (skip + notify)
+       │ NO
+       ▼
+  ┌────┴──────────────────────────┐
+  │  For each zone:               │
+  │                               │
+  │  Zone enabled?                │
+  │  Valve selected?              │
+  │  Is food zone? ──NO──▶ skip   │
+  │       │ YES                   │
+  │  Interval due?                │
+  │  OR moisture below threshold? │
+  │  Moisture ABOVE skip?──YES──▶ │
+  │       │ NO                    │
+  │  Open valve                   │
+  │  Wait (base_dur × food_pct %) │
+  │  Close valve                  │
+  │  Update tracker               │
+  └───────────────────────────────┘
+       │
+       ▼
+  Send 🌿 Reduced Mode summary notification
+
+═══ Normal morning cycle (suppressed when reduced mode is ON) ═══
+
 Sunrise + offset
        │
+       ▼
+  Reduced water mode ON?  ──YES──▶  STOP
+       │ NO
        ▼
   Fetch daily forecast
        │
@@ -134,10 +240,13 @@ Sunrise + offset
        ▼
   Send morning summary notification
 
-═══ Evening hot-day check (separate time trigger) ═══
+═══ Evening hot-day check (disabled when reduced mode is ON) ═══
 
 Evening check time (default 20:00)
        │
+       ▼
+  Reduced water mode ON?  ──YES──▶  STOP
+       │ NO
        ▼
   Read stored morning forecast
        │

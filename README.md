@@ -20,6 +20,80 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 
 ---
 
+## Water Usage Tracking
+
+### Overview
+
+The water tracking system provides a general impression of water consumption across all four irrigation zones. It automatically accounts for **parallel zone operation** — when multiple valves open simultaneously, per-zone flow is reduced due to pressure drop in the shared 15 mm supply.
+
+Tracking works for **both automated (blueprint) and manual valve use** with no extra configuration required.
+
+### New Files
+
+| File | Purpose |
+|---|---|
+| `configuration/water_tracking.yaml` | `input_number` helpers, template sensors (active zone count, flow multiplier, per-zone flow), and Riemann Sum integral sensors for cumulative totals |
+| `automations/manual_watering_log.yaml` | Four automations (one per zone) that log litres used when a valve is closed manually, outside of the blueprint automation |
+| `configuration/lovelace_water_card.yaml` | Ready-to-paste Lovelace card showing flow rates, 7-day history graph, and running totals |
+
+### Flow Reduction Model
+
+When multiple zones run simultaneously, pressure drop in the shared 15 mm supply reduces per-zone flow. A simple lookup-table multiplier is applied automatically:
+
+| Zones Active | Per-Zone Multiplier | Per-Zone Flow |
+|---|---|---|
+| 1 | 1.00 | ~5.0 L/min |
+| 2 | 0.84 | ~4.2 L/min |
+| 3 | 0.70 | ~3.5 L/min |
+| 4 | 0.62 | ~3.1 L/min |
+
+The `sensor.flow_multiplier` template sensor reads the active zone count and applies the correct coefficient automatically. All per-zone flow sensors inherit this multiplier, so Riemann Sum integrals accumulate the right volume whether one or all four zones are running.
+
+### Setup
+
+#### Step 1 — Add to `configuration.yaml`
+
+The simplest method is the HA packages system, which merges all platforms cleanly:
+
+```yaml
+# configuration.yaml
+homeassistant:
+  packages:
+    water_tracking: !include configuration/water_tracking.yaml
+```
+
+Also include the manual watering automations:
+
+```yaml
+# configuration.yaml  (in addition to any existing automation includes)
+automation manual_watering: !include automations/manual_watering_log.yaml
+```
+
+#### Step 2 — Replace placeholder valve entity IDs
+
+Open `configuration/water_tracking.yaml` and `automations/manual_watering_log.yaml` and replace every occurrence of `switch.zone_X_valve` with your real HA valve or switch entity IDs.
+
+#### Step 3 — Update the automation entity ID
+
+In `automations/manual_watering_log.yaml`, replace `automation.smart_garden_watering` in the condition of each automation with the actual entity ID of your blueprint automation instance. Find it under **Settings → Automations** — it appears in the URL when you open the automation.
+
+#### Step 4 — Reload Home Assistant
+
+Go to **Settings → Developer Tools → YAML → Reload All YAML** (or restart HA).
+
+### Energy Dashboard Integration
+
+The Riemann Sum sensors (`sensor.zone_1_water_total_litres` through `zone_4`) can be added to the HA **Energy dashboard** under the **Water** section for historical graphing and statistics. They accumulate automatically for both automated and manual valve use.
+
+### Dashboard Card
+
+Paste the contents of `configuration/lovelace_water_card.yaml` into a **Manual card** on any Lovelace dashboard (**Edit → + Add Card → Manual**). It shows:
+- Live current flow per zone (accounting for parallel pressure reduction)
+- 7-day history graph of per-run litres
+- Running total litres per zone
+
+---
+
 ## Installation
 
 ### Option A — One-click import

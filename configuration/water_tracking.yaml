@@ -7,22 +7,15 @@
 # 1. Replace all placeholder valve entity IDs below (switch.zone_X_valve) with
 #    your real Home Assistant valve/switch entity IDs.
 #
-# 2. Include this file in your configuration.yaml using the multi-platform
-#    merge key syntax. Add the following lines to configuration.yaml:
-#
-#      input_number: !include_merge_list configuration/water_tracking.yaml
-#
-#    Or, if you manage input_number and sensor in separate include files,
-#    copy the relevant sections into your existing includes.
-#
-#    The recommended approach is to add two separate includes:
+# 2. Include this file in your configuration.yaml using the HA packages system,
+#    which merges all platforms (input_number, template, sensor) cleanly:
 #
 #      # configuration.yaml
 #      homeassistant:
 #        packages:
 #          water_tracking: !include configuration/water_tracking.yaml
 #
-#    Using packages is the simplest approach — it merges all platforms cleanly.
+#    Using packages is the recommended approach — it merges all platforms cleanly.
 #
 # 3. Reload Home Assistant or restart after adding this file.
 #

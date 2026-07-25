@@ -66,8 +66,10 @@ Also include the manual watering automations:
 
 ```yaml
 # configuration.yaml  (in addition to any existing automation includes)
-automation manual_watering: !include automations/manual_watering_log.yaml
+automation: !include automations/manual_watering_log.yaml
 ```
+
+> If you already use `!include_dir_merge_list automations/` for other automations, simply place `manual_watering_log.yaml` in that directory — it will be picked up automatically.
 
 #### Step 2 — Replace placeholder valve entity IDs
 

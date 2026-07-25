@@ -11,13 +11,21 @@
 #    Replace 'automation.smart_garden_watering' with the actual entity ID of
 #    your blueprint automation instance (visible in Settings → Automations).
 #
-# 3. Include this file in configuration.yaml:
-#      automation: !include_dir_merge_list automations/
-#    Or add a specific include:
-#      automation manual: !include automations/manual_watering_log.yaml
+# 3. Include this file in configuration.yaml. If you have no existing automation
+#    includes, add:
+#      automation: !include automations/manual_watering_log.yaml
+#    If you already use !include_dir_merge_list, place this file in the same
+#    automations directory and it will be picked up automatically.
 #
-# 4. These automations only fire when the blueprint automation is NOT running,
-#    ensuring manual and automated usage are not double-counted.
+# 4. These automations only fire when the blueprint automation is NOT currently
+#    executing, ensuring manual and automated usage are not double-counted.
+#    The condition uses the 'current' attribute (number of running instances)
+#    rather than the state string, which only reflects enabled/disabled.
+#
+# 5. NOTE: The flow multiplier is sampled at the moment the valve closes.
+#    If multiple zones were open for different durations during the session,
+#    the snapshot value is a reasonable approximation but not an exact average.
+#    This is acceptable given the general-impression goal of this tracking.
 #
 # =============================================================================
 
@@ -41,7 +49,7 @@
       # REPLACE automation.smart_garden_watering with your actual automation entity ID
       # (visible in Settings → Automations → your automation → info icon)
       value_template: >
-        {{ not is_state('automation.smart_garden_watering', 'on') }}
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
   action:
     - variables:
         manual_duration_min: >
@@ -82,7 +90,7 @@
     - condition: template
       # REPLACE automation.smart_garden_watering with your actual automation entity ID
       value_template: >
-        {{ not is_state('automation.smart_garden_watering', 'on') }}
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
   action:
     - variables:
         manual_duration_min: >
@@ -123,7 +131,7 @@
     - condition: template
       # REPLACE automation.smart_garden_watering with your actual automation entity ID
       value_template: >
-        {{ not is_state('automation.smart_garden_watering', 'on') }}
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
   action:
     - variables:
         manual_duration_min: >
@@ -164,7 +172,7 @@
     - condition: template
       # REPLACE automation.smart_garden_watering with your actual automation entity ID
       value_template: >
-        {{ not is_state('automation.smart_garden_watering', 'on') }}
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
   action:
     - variables:
         manual_duration_min: >

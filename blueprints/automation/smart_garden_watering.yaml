@@ -999,7 +999,7 @@ action:
           rw_z1_days_elapsed: >-
             {% if zone_1_last_watered != '' and
                   states(zone_1_last_watered) not in ['unknown', 'unavailable', ''] %}
-              {{ (now().date() - as_datetime(states(zone_1_last_watered)).date()).days }}
+              {{ (now().date() - as_local(as_datetime(states(zone_1_last_watered))).date()).days }}
             {% else %}
               999
             {% endif %}
@@ -1069,7 +1069,7 @@ action:
           rw_z2_days_elapsed: >-
             {% if zone_2_last_watered != '' and
                   states(zone_2_last_watered) not in ['unknown', 'unavailable', ''] %}
-              {{ (now().date() - as_datetime(states(zone_2_last_watered)).date()).days }}
+              {{ (now().date() - as_local(as_datetime(states(zone_2_last_watered))).date()).days }}
             {% else %}
               999
             {% endif %}
@@ -1139,7 +1139,7 @@ action:
           rw_z3_days_elapsed: >-
             {% if zone_3_last_watered != '' and
                   states(zone_3_last_watered) not in ['unknown', 'unavailable', ''] %}
-              {{ (now().date() - as_datetime(states(zone_3_last_watered)).date()).days }}
+              {{ (now().date() - as_local(as_datetime(states(zone_3_last_watered))).date()).days }}
             {% else %}
               999
             {% endif %}
@@ -1209,7 +1209,7 @@ action:
           rw_z4_days_elapsed: >-
             {% if zone_4_last_watered != '' and
                   states(zone_4_last_watered) not in ['unknown', 'unavailable', ''] %}
-              {{ (now().date() - as_datetime(states(zone_4_last_watered)).date()).days }}
+              {{ (now().date() - as_local(as_datetime(states(zone_4_last_watered))).date()).days }}
             {% else %}
               999
             {% endif %}
@@ -2245,7 +2245,7 @@ action:
       z1_days_elapsed: >-
         {% if zone_1_last_watered != '' and
               states(zone_1_last_watered) not in ['unknown', 'unavailable', ''] %}
-          {{ (now().date() - as_datetime(states(zone_1_last_watered)).date()).days }}
+          {{ (now().date() - as_local(as_datetime(states(zone_1_last_watered))).date()).days }}
         {% else %}
           999
         {% endif %}
@@ -2314,7 +2314,7 @@ action:
       z2_days_elapsed: >-
         {% if zone_2_last_watered != '' and
               states(zone_2_last_watered) not in ['unknown', 'unavailable', ''] %}
-          {{ (now().date() - as_datetime(states(zone_2_last_watered)).date()).days }}
+          {{ (now().date() - as_local(as_datetime(states(zone_2_last_watered))).date()).days }}
         {% else %}
           999
         {% endif %}
@@ -2383,7 +2383,7 @@ action:
       z3_days_elapsed: >-
         {% if zone_3_last_watered != '' and
               states(zone_3_last_watered) not in ['unknown', 'unavailable', ''] %}
-          {{ (now().date() - as_datetime(states(zone_3_last_watered)).date()).days }}
+          {{ (now().date() - as_local(as_datetime(states(zone_3_last_watered))).date()).days }}
         {% else %}
           999
         {% endif %}
@@ -2452,7 +2452,7 @@ action:
       z4_days_elapsed: >-
         {% if zone_4_last_watered != '' and
               states(zone_4_last_watered) not in ['unknown', 'unavailable', ''] %}
-          {{ (now().date() - as_datetime(states(zone_4_last_watered)).date()).days }}
+          {{ (now().date() - as_local(as_datetime(states(zone_4_last_watered))).date()).days }}
         {% else %}
           999
         {% endif %}

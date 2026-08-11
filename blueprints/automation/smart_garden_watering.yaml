@@ -215,7 +215,7 @@ blueprint:
       name: Water Usage Tracking
       icon: mdi:water-analytics
       description: >-
-        Optional per-zone water usage tracking. Set each zone's flow rate
+        Optional per-zone water usage tracking. Set the flow rate
         (L/min) below and link the input_number helpers from
         water_tracking.yaml to record litres per run and running totals.
         The blueprint calculates volume automatically using
@@ -223,10 +223,10 @@ blueprint:
         Leave helpers empty to disable tracking for a zone.
       input:
 
-        zone_1_flow_rate:
-          name: "Zone 1 — Flow Rate (L/min)"
+        flow_rate:
+          name: "Flow Rate (L/min)"
           description: >-
-            Flow rate for Zone 1 in litres per minute when only this zone
+            Flow rate for all valves in litres per minute when only one zone
             is running. Automatically reduced when multiple zones run in
             parallel (shared-pipe pressure-drop model).
           default: 5.0
@@ -258,20 +258,6 @@ blueprint:
             entity:
               domain: input_number
 
-        zone_2_flow_rate:
-          name: "Zone 2 — Flow Rate (L/min)"
-          description: >-
-            Flow rate for Zone 2 in litres per minute when only this zone
-            is running.
-          default: 5.0
-          selector:
-            number:
-              min: 0.1
-              max: 20.0
-              step: 0.1
-              unit_of_measurement: "L/min"
-              mode: box
-
         zone_2_last_litres_helper:
           name: "Zone 2 — Last Run Litres Helper (optional)"
           description: >-
@@ -292,20 +278,6 @@ blueprint:
             entity:
               domain: input_number
 
-        zone_3_flow_rate:
-          name: "Zone 3 — Flow Rate (L/min)"
-          description: >-
-            Flow rate for Zone 3 in litres per minute when only this zone
-            is running.
-          default: 5.0
-          selector:
-            number:
-              min: 0.1
-              max: 20.0
-              step: 0.1
-              unit_of_measurement: "L/min"
-              mode: box
-
         zone_3_last_litres_helper:
           name: "Zone 3 — Last Run Litres Helper (optional)"
           description: >-
@@ -325,20 +297,6 @@ blueprint:
           selector:
             entity:
               domain: input_number
-
-        zone_4_flow_rate:
-          name: "Zone 4 — Flow Rate (L/min)"
-          description: >-
-            Flow rate for Zone 4 in litres per minute when only this zone
-            is running.
-          default: 5.0
-          selector:
-            number:
-              min: 0.1
-              max: 20.0
-              step: 0.1
-              unit_of_measurement: "L/min"
-              mode: box
 
         zone_4_last_litres_helper:
           name: "Zone 4 — Last Run Litres Helper (optional)"
@@ -1103,16 +1061,13 @@ variables:
   # HA automation variables evaluate once at definition time. The multiplier must
   # be sampled at different moments (start/end of each zone's run), so it cannot
   # be a single top-level variable.
-  zone_1_flow_rate: !input zone_1_flow_rate
+  flow_rate: !input flow_rate
   zone_1_last_litres_helper: !input zone_1_last_litres_helper
   zone_1_total_litres_helper: !input zone_1_total_litres_helper
-  zone_2_flow_rate: !input zone_2_flow_rate
   zone_2_last_litres_helper: !input zone_2_last_litres_helper
   zone_2_total_litres_helper: !input zone_2_total_litres_helper
-  zone_3_flow_rate: !input zone_3_flow_rate
   zone_3_last_litres_helper: !input zone_3_last_litres_helper
   zone_3_total_litres_helper: !input zone_3_total_litres_helper
-  zone_4_flow_rate: !input zone_4_flow_rate
   zone_4_last_litres_helper: !input zone_4_last_litres_helper
   zone_4_total_litres_helper: !input zone_4_total_litres_helper
   track_manual_watering: !input track_manual_watering
@@ -1145,7 +1100,7 @@ action:
               0
             {%- endif -%}
           _mz_flow: >-
-            {{ [zone_1_flow_rate, zone_2_flow_rate, zone_3_flow_rate, zone_4_flow_rate][_mz_zone - 1] | float(5.0) }}
+            {{ flow_rate | float(5.0) }}
           _mz_multiplier: >-
             {{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get(
               [(zone_1_valve != '' and states(zone_1_valve) in ['on','open']),
@@ -1613,7 +1568,7 @@ action:
                                   - variables:
                                       _rw_z1_litres: >-
                                         {{ (rw_z1_duration | float
-                                            * (zone_1_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((rw_z1_flow_multiplier_start + rw_z1_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -1687,7 +1642,7 @@ action:
                                   - variables:
                                       _rw_z2_litres: >-
                                         {{ (rw_z2_duration | float
-                                            * (zone_2_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((rw_z2_flow_multiplier_start + rw_z2_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -1761,7 +1716,7 @@ action:
                                   - variables:
                                       _rw_z3_litres: >-
                                         {{ (rw_z3_duration | float
-                                            * (zone_3_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((rw_z3_flow_multiplier_start + rw_z3_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -1835,7 +1790,7 @@ action:
                                   - variables:
                                       _rw_z4_litres: >-
                                         {{ (rw_z4_duration | float
-                                            * (zone_4_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((rw_z4_flow_multiplier_start + rw_z4_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -2340,7 +2295,7 @@ action:
                                   - variables:
                                       _eve_z1_litres: >-
                                         {{ (z1_eve_duration | float
-                                            * (zone_1_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((_eve_z1_multiplier_start + _eve_z1_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -2404,7 +2359,7 @@ action:
                                   - variables:
                                       _eve_z2_litres: >-
                                         {{ (z2_eve_duration | float
-                                            * (zone_2_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((_eve_z2_multiplier_start + _eve_z2_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -2468,7 +2423,7 @@ action:
                                   - variables:
                                       _eve_z3_litres: >-
                                         {{ (z3_eve_duration | float
-                                            * (zone_3_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((_eve_z3_multiplier_start + _eve_z3_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -2532,7 +2487,7 @@ action:
                                   - variables:
                                       _eve_z4_litres: >-
                                         {{ (z4_eve_duration | float
-                                            * (zone_4_flow_rate | float(5.0))
+                                            * (flow_rate | float(5.0))
                                             * ((_eve_z4_multiplier_start + _eve_z4_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
@@ -3129,7 +3084,7 @@ action:
                               - variables:
                                   _z1_litres: >-
                                     {{ (z1_duration | float
-                                        * (zone_1_flow_rate | float(5.0))
+                                        * (flow_rate | float(5.0))
                                         * ((_z1_multiplier_start + _z1_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
@@ -3204,7 +3159,7 @@ action:
                               - variables:
                                   _z2_litres: >-
                                     {{ (z2_duration | float
-                                        * (zone_2_flow_rate | float(5.0))
+                                        * (flow_rate | float(5.0))
                                         * ((_z2_multiplier_start + _z2_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
@@ -3279,7 +3234,7 @@ action:
                               - variables:
                                   _z3_litres: >-
                                     {{ (z3_duration | float
-                                        * (zone_3_flow_rate | float(5.0))
+                                        * (flow_rate | float(5.0))
                                         * ((_z3_multiplier_start + _z3_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
@@ -3354,7 +3309,7 @@ action:
                               - variables:
                                   _z4_litres: >-
                                     {{ (z4_duration | float
-                                        * (zone_4_flow_rate | float(5.0))
+                                        * (flow_rate | float(5.0))
                                         * ((_z4_multiplier_start + _z4_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:

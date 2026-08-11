@@ -36,6 +36,26 @@ Tracking works for **both automated (blueprint) and manual valve use** with no e
 | `automations/manual_watering_log.yaml` | Four automations (one per zone) that log litres used when a valve is closed manually, outside of the blueprint automation |
 | `configuration/lovelace_water_card.yaml` | Ready-to-paste Lovelace card showing flow rates, 7-day history graph, and running totals |
 
+### Quick Start
+
+These three files live in this GitHub repository, but Home Assistant only reads files from **your own HA config directory** (usually `/config`, `~/.homeassistant`, or a similar install-specific path). In other words: **repo files are download sources; HA config files are the copies you place inside your Home Assistant installation.**
+
+1. **Choose an install method.**  
+   - **Automatic:** run `curl -fsSL https://raw.githubusercontent.com/wilman-labs/Smart-Garden-watering-system/main/scripts/install_water_tracking.sh -o /tmp/install_water_tracking.sh && bash /tmp/install_water_tracking.sh`  
+   - **Manual:** download the three repo files and copy them into your HA config directory.
+2. **Place the files in Home Assistant.**  
+   - `configuration/water_tracking.yaml` → `<HA_CONFIG>/configuration/water_tracking.yaml`  
+   - `automations/manual_watering_log.yaml` → `<HA_CONFIG>/automations/manual_watering_log.yaml`  
+   - `configuration/lovelace_water_card.yaml` → `<HA_CONFIG>/configuration/lovelace_water_card.yaml`
+3. **Replace placeholders.**  
+   In `water_tracking.yaml` and `manual_watering_log.yaml`, replace every `switch.zone_X_valve` placeholder with your real valve entity IDs. In `manual_watering_log.yaml`, also replace `automation.smart_garden_watering` with your actual blueprint automation entity ID.
+4. **Add the includes.**  
+   In `configuration.yaml`, add `homeassistant: packages: water_tracking: !include configuration/water_tracking.yaml` and include `automations/manual_watering_log.yaml` using your normal automation include pattern.
+5. **Reload HA and add the dashboard card.**  
+   Reload YAML (or restart Home Assistant), then paste `configuration/lovelace_water_card.yaml` into a Lovelace **Manual** card.
+
+> The install script above can be run from any directory. It downloads the repo files from GitHub, creates the `configuration/` and `automations/` folders inside your HA config if needed, offers to back up existing files, and can replace the placeholder entity IDs for you.
+
 ### Flow Reduction Model
 
 When multiple zones run simultaneously, pressure drop in the shared 15 mm supply reduces per-zone flow. A simple lookup-table multiplier is applied automatically:

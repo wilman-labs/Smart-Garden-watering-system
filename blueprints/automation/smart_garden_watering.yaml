@@ -1469,6 +1469,8 @@ action:
                                   rw_z1_should_water: false
                                   rw_z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
                         default:
+                          - variables:
+                              rw_z1_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z1_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1494,7 +1496,7 @@ action:
                                       _rw_z1_litres: >-
                                         {{ (rw_z1_duration | float
                                             * (states(zone_1_flow_rate_helper) | float(5.0))
-                                            * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+                                            * rw_z1_flow_multiplier) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_1_last_litres_helper }}"
@@ -1539,6 +1541,8 @@ action:
                                   rw_z2_should_water: false
                                   rw_z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
                         default:
+                          - variables:
+                              rw_z2_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z2_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1564,7 +1568,7 @@ action:
                                       _rw_z2_litres: >-
                                         {{ (rw_z2_duration | float
                                             * (states(zone_2_flow_rate_helper) | float(5.0))
-                                            * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+                                            * rw_z2_flow_multiplier) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_2_last_litres_helper }}"
@@ -1607,6 +1611,8 @@ action:
                                   rw_z3_should_water: false
                                   rw_z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
                         default:
+                          - variables:
+                              rw_z3_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z3_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1632,7 +1638,7 @@ action:
                                       _rw_z3_litres: >-
                                         {{ (rw_z3_duration | float
                                             * (states(zone_3_flow_rate_helper) | float(5.0))
-                                            * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+                                            * rw_z3_flow_multiplier) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_3_last_litres_helper }}"
@@ -1675,6 +1681,8 @@ action:
                                   rw_z4_should_water: false
                                   rw_z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
                         default:
+                          - variables:
+                              rw_z4_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z4_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1700,7 +1708,7 @@ action:
                                       _rw_z4_litres: >-
                                         {{ (rw_z4_duration | float
                                             * (states(zone_4_flow_rate_helper) | float(5.0))
-                                            * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+                                            * rw_z4_flow_multiplier) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_4_last_litres_helper }}"

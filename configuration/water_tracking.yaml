@@ -105,51 +105,63 @@ template:
       - name: "Zone 1 Last Run Litres"
         unique_id: zone_1_last_run_litres_sensor
         unit_of_measurement: "L"
+        device_class: water
+        state_class: measurement
         icon: mdi:water
         state: "{{ states('input_number.zone_1_last_litres') | float(0) }}"
 
       - name: "Zone 2 Last Run Litres"
         unique_id: zone_2_last_run_litres_sensor
         unit_of_measurement: "L"
+        device_class: water
+        state_class: measurement
         icon: mdi:water
         state: "{{ states('input_number.zone_2_last_litres') | float(0) }}"
 
       - name: "Zone 3 Last Run Litres"
         unique_id: zone_3_last_run_litres_sensor
         unit_of_measurement: "L"
+        device_class: water
+        state_class: measurement
         icon: mdi:water
         state: "{{ states('input_number.zone_3_last_litres') | float(0) }}"
 
       - name: "Zone 4 Last Run Litres"
         unique_id: zone_4_last_run_litres_sensor
         unit_of_measurement: "L"
+        device_class: water
+        state_class: measurement
         icon: mdi:water
         state: "{{ states('input_number.zone_4_last_litres') | float(0) }}"
 
       - name: "Zone 1 Total Litres"
         unique_id: zone_1_total_litres_sensor
         unit_of_measurement: "L"
-        state_class: total_increasing
+        device_class: water
+        state_class: measurement
         icon: mdi:water-outline
         state: "{{ states('input_number.zone_1_total_litres') | float(0) }}"
 
       - name: "Zone 2 Total Litres"
         unique_id: zone_2_total_litres_sensor
         unit_of_measurement: "L"
-        state_class: total_increasing
+        device_class: water
+        state_class: measurement
         icon: mdi:water-outline
         state: "{{ states('input_number.zone_2_total_litres') | float(0) }}"
 
       - name: "Zone 3 Total Litres"
         unique_id: zone_3_total_litres_sensor
         unit_of_measurement: "L"
-        state_class: total_increasing
+        device_class: water
+        state_class: measurement
         icon: mdi:water-outline
         state: "{{ states('input_number.zone_3_total_litres') | float(0) }}"
 
       - name: "Zone 4 Total Litres"
         unique_id: zone_4_total_litres_sensor
         unit_of_measurement: "L"
-        state_class: total_increasing
+        device_class: water
+        state_class: measurement
         icon: mdi:water-outline
         state: "{{ states('input_number.zone_4_total_litres') | float(0) }}"

@@ -1114,6 +1114,9 @@ action:
             {{ [zone_1_last_litres_helper, zone_2_last_litres_helper, zone_3_last_litres_helper, zone_4_last_litres_helper][_mz_zone - 1] }}
           _mz_total_helper: >-
             {{ [zone_1_total_litres_helper, zone_2_total_litres_helper, zone_3_total_litres_helper, zone_4_total_litres_helper][_mz_zone - 1] }}
+      # Abort if no active-state duration was captured (e.g. unavailable → off recovery)
+      - condition: template
+        value_template: "{{ _mz_duration_min | float > 0 }}"
       - choose:
           - conditions:
               - condition: template

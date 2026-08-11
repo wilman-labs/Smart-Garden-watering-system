@@ -26,6 +26,7 @@ input_number:
     min: 0
     max: 10000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water
 
@@ -34,6 +35,7 @@ input_number:
     min: 0
     max: 10000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water
 
@@ -42,6 +44,7 @@ input_number:
     min: 0
     max: 10000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water
 
@@ -50,6 +53,7 @@ input_number:
     min: 0
     max: 10000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water
 
@@ -59,6 +63,7 @@ input_number:
     min: 0
     max: 1000000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water-outline
 
@@ -67,6 +72,7 @@ input_number:
     min: 0
     max: 1000000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water-outline
 
@@ -75,6 +81,7 @@ input_number:
     min: 0
     max: 1000000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water-outline
 
@@ -83,5 +90,6 @@ input_number:
     min: 0
     max: 1000000
     step: 0.1
+    mode: box
     unit_of_measurement: "L"
     icon: mdi:water-outline

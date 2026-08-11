@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Garden Watering System v0.7
+  name: Smart Garden Watering System v0.8
   description: >-
     Automatic 4-zone garden watering system that adapts to daily weather forecasts
     and optional soil moisture sensors.
@@ -203,6 +203,92 @@ blueprint:
           default: ""
           selector:
             text: {}
+
+    # ── Water tracking (optional) ────────────────────────────────────
+    water_tracking:
+      name: Water Usage Tracking (optional)
+      icon: mdi:water-check
+      collapsed: true
+      description: >-
+        Link helpers from configuration/water_tracking.yaml to track litres
+        per run and cumulative totals. Leave any field empty to skip blueprint
+        tracking updates for that zone.
+      input:
+        zone_1_flow_rate_helper:
+          name: "Zone 1 — Flow Rate Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_1_last_litres_helper:
+          name: "Zone 1 — Last Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_1_total_litres_helper:
+          name: "Zone 1 — Total Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_2_flow_rate_helper:
+          name: "Zone 2 — Flow Rate Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_2_last_litres_helper:
+          name: "Zone 2 — Last Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_2_total_litres_helper:
+          name: "Zone 2 — Total Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_3_flow_rate_helper:
+          name: "Zone 3 — Flow Rate Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_3_last_litres_helper:
+          name: "Zone 3 — Last Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_3_total_litres_helper:
+          name: "Zone 3 — Total Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+
+        zone_4_flow_rate_helper:
+          name: "Zone 4 — Flow Rate Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_4_last_litres_helper:
+          name: "Zone 4 — Last Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
+        zone_4_total_litres_helper:
+          name: "Zone 4 — Total Litres Helper"
+          default: ""
+          selector:
+            entity:
+              domain: input_number
 
     # ── Zone 1 ─────────────────────────────────────────────────────
     zone_1:
@@ -846,6 +932,19 @@ variables:
   notify_target: !input notify_target
   reduced_water_mode: !input reduced_water_mode
   reduced_water_food_zone_percent: !input reduced_water_food_zone_percent
+  # Water tracking
+  zone_1_flow_rate_helper: !input zone_1_flow_rate_helper
+  zone_1_last_litres_helper: !input zone_1_last_litres_helper
+  zone_1_total_litres_helper: !input zone_1_total_litres_helper
+  zone_2_flow_rate_helper: !input zone_2_flow_rate_helper
+  zone_2_last_litres_helper: !input zone_2_last_litres_helper
+  zone_2_total_litres_helper: !input zone_2_total_litres_helper
+  zone_3_flow_rate_helper: !input zone_3_flow_rate_helper
+  zone_3_last_litres_helper: !input zone_3_last_litres_helper
+  zone_3_total_litres_helper: !input zone_3_total_litres_helper
+  zone_4_flow_rate_helper: !input zone_4_flow_rate_helper
+  zone_4_last_litres_helper: !input zone_4_last_litres_helper
+  zone_4_total_litres_helper: !input zone_4_total_litres_helper
   # Zone 1
   zone_1_enabled: !input zone_1_enabled
   zone_1_name: !input zone_1_name
@@ -1325,6 +1424,32 @@ action:
                           - choose:
                               - conditions:
                                   - condition: template
+                                    value_template: >-
+                                      {{ zone_1_flow_rate_helper != ''
+                                         and zone_1_last_litres_helper != ''
+                                         and zone_1_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      rw_z1_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      rw_z1_litres_used: >-
+                                        {{ ((rw_z1_duration | float(0))
+                                            * (states(zone_1_flow_rate_helper) | float(0))
+                                            * rw_z1_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_1_last_litres_helper }}"
+                                    data:
+                                      value: "{{ rw_z1_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_1_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_1_total_litres_helper) | float(0))
+                                            + rw_z1_litres_used) | round(1) }}
+                          - choose:
+                              - conditions:
+                                  - condition: template
                                     value_template: "{{ zone_1_last_watered != '' }}"
                                 sequence:
                                   - service: input_datetime.set_datetime
@@ -1364,6 +1489,32 @@ action:
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_2_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: >-
+                                      {{ zone_2_flow_rate_helper != ''
+                                         and zone_2_last_litres_helper != ''
+                                         and zone_2_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      rw_z2_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      rw_z2_litres_used: >-
+                                        {{ ((rw_z2_duration | float(0))
+                                            * (states(zone_2_flow_rate_helper) | float(0))
+                                            * rw_z2_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_2_last_litres_helper }}"
+                                    data:
+                                      value: "{{ rw_z2_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_2_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_2_total_litres_helper) | float(0))
+                                            + rw_z2_litres_used) | round(1) }}
                           - choose:
                               - conditions:
                                   - condition: template
@@ -1409,6 +1560,32 @@ action:
                           - choose:
                               - conditions:
                                   - condition: template
+                                    value_template: >-
+                                      {{ zone_3_flow_rate_helper != ''
+                                         and zone_3_last_litres_helper != ''
+                                         and zone_3_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      rw_z3_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      rw_z3_litres_used: >-
+                                        {{ ((rw_z3_duration | float(0))
+                                            * (states(zone_3_flow_rate_helper) | float(0))
+                                            * rw_z3_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_3_last_litres_helper }}"
+                                    data:
+                                      value: "{{ rw_z3_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_3_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_3_total_litres_helper) | float(0))
+                                            + rw_z3_litres_used) | round(1) }}
+                          - choose:
+                              - conditions:
+                                  - condition: template
                                     value_template: "{{ zone_3_last_watered != '' }}"
                                 sequence:
                                   - service: input_datetime.set_datetime
@@ -1448,6 +1625,32 @@ action:
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_4_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: >-
+                                      {{ zone_4_flow_rate_helper != ''
+                                         and zone_4_last_litres_helper != ''
+                                         and zone_4_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      rw_z4_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      rw_z4_litres_used: >-
+                                        {{ ((rw_z4_duration | float(0))
+                                            * (states(zone_4_flow_rate_helper) | float(0))
+                                            * rw_z4_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_4_last_litres_helper }}"
+                                    data:
+                                      value: "{{ rw_z4_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_4_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_4_total_litres_helper) | float(0))
+                                            + rw_z4_litres_used) | round(1) }}
                           - choose:
                               - conditions:
                                   - condition: template
@@ -1933,6 +2136,32 @@ action:
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_1_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: >-
+                                      {{ zone_1_flow_rate_helper != ''
+                                         and zone_1_last_litres_helper != ''
+                                         and zone_1_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      z1_eve_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      z1_eve_litres_used: >-
+                                        {{ ((z1_eve_duration | float(0))
+                                            * (states(zone_1_flow_rate_helper) | float(0))
+                                            * z1_eve_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_1_last_litres_helper }}"
+                                    data:
+                                      value: "{{ z1_eve_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_1_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_1_total_litres_helper) | float(0))
+                                            + z1_eve_litres_used) | round(1) }}
           - sequence:
               - alias: "Zone 2 — evening water if needed"
                 choose:
@@ -1965,6 +2194,32 @@ action:
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_2_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: >-
+                                      {{ zone_2_flow_rate_helper != ''
+                                         and zone_2_last_litres_helper != ''
+                                         and zone_2_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      z2_eve_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      z2_eve_litres_used: >-
+                                        {{ ((z2_eve_duration | float(0))
+                                            * (states(zone_2_flow_rate_helper) | float(0))
+                                            * z2_eve_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_2_last_litres_helper }}"
+                                    data:
+                                      value: "{{ z2_eve_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_2_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_2_total_litres_helper) | float(0))
+                                            + z2_eve_litres_used) | round(1) }}
           - sequence:
               - alias: "Zone 3 — evening water if needed"
                 choose:
@@ -1997,6 +2252,32 @@ action:
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_3_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: >-
+                                      {{ zone_3_flow_rate_helper != ''
+                                         and zone_3_last_litres_helper != ''
+                                         and zone_3_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      z3_eve_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      z3_eve_litres_used: >-
+                                        {{ ((z3_eve_duration | float(0))
+                                            * (states(zone_3_flow_rate_helper) | float(0))
+                                            * z3_eve_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_3_last_litres_helper }}"
+                                    data:
+                                      value: "{{ z3_eve_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_3_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_3_total_litres_helper) | float(0))
+                                            + z3_eve_litres_used) | round(1) }}
           - sequence:
               - alias: "Zone 4 — evening water if needed"
                 choose:
@@ -2029,6 +2310,32 @@ action:
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_4_valve }}"
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: >-
+                                      {{ zone_4_flow_rate_helper != ''
+                                         and zone_4_last_litres_helper != ''
+                                         and zone_4_total_litres_helper != '' }}
+                                sequence:
+                                  - variables:
+                                      z4_eve_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                      z4_eve_litres_used: >-
+                                        {{ ((z4_eve_duration | float(0))
+                                            * (states(zone_4_flow_rate_helper) | float(0))
+                                            * z4_eve_flow_multiplier) | round(1) }}
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_4_last_litres_helper }}"
+                                    data:
+                                      value: "{{ z4_eve_litres_used }}"
+                                  - service: input_number.set_value
+                                    target:
+                                      entity_id: "{{ zone_4_total_litres_helper }}"
+                                    data:
+                                      value: >-
+                                        {{ ((states(zone_4_total_litres_helper) | float(0))
+                                            + z4_eve_litres_used) | round(1) }}
 
       # ── Evening post-watering moisture update ─────────────────────
       - alias: "Evening — update moisture lines post-watering"
@@ -2587,6 +2894,32 @@ action:
                       - choose:
                           - conditions:
                               - condition: template
+                                value_template: >-
+                                  {{ zone_1_flow_rate_helper != ''
+                                     and zone_1_last_litres_helper != ''
+                                     and zone_1_total_litres_helper != '' }}
+                            sequence:
+                              - variables:
+                                  z1_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                  z1_litres_used: >-
+                                    {{ ((z1_duration | float(0))
+                                        * (states(zone_1_flow_rate_helper) | float(0))
+                                        * z1_flow_multiplier) | round(1) }}
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_1_last_litres_helper }}"
+                                data:
+                                  value: "{{ z1_litres_used }}"
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_1_total_litres_helper }}"
+                                data:
+                                  value: >-
+                                    {{ ((states(zone_1_total_litres_helper) | float(0))
+                                        + z1_litres_used) | round(1) }}
+                      - choose:
+                          - conditions:
+                              - condition: template
                                 value_template: "{{ zone_1_last_watered != '' }}"
                             sequence:
                               - service: input_datetime.set_datetime
@@ -2627,6 +2960,32 @@ action:
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_2_valve }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: >-
+                                  {{ zone_2_flow_rate_helper != ''
+                                     and zone_2_last_litres_helper != ''
+                                     and zone_2_total_litres_helper != '' }}
+                            sequence:
+                              - variables:
+                                  z2_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                  z2_litres_used: >-
+                                    {{ ((z2_duration | float(0))
+                                        * (states(zone_2_flow_rate_helper) | float(0))
+                                        * z2_flow_multiplier) | round(1) }}
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_2_last_litres_helper }}"
+                                data:
+                                  value: "{{ z2_litres_used }}"
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_2_total_litres_helper }}"
+                                data:
+                                  value: >-
+                                    {{ ((states(zone_2_total_litres_helper) | float(0))
+                                        + z2_litres_used) | round(1) }}
                       - choose:
                           - conditions:
                               - condition: template
@@ -2673,6 +3032,32 @@ action:
                       - choose:
                           - conditions:
                               - condition: template
+                                value_template: >-
+                                  {{ zone_3_flow_rate_helper != ''
+                                     and zone_3_last_litres_helper != ''
+                                     and zone_3_total_litres_helper != '' }}
+                            sequence:
+                              - variables:
+                                  z3_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                  z3_litres_used: >-
+                                    {{ ((z3_duration | float(0))
+                                        * (states(zone_3_flow_rate_helper) | float(0))
+                                        * z3_flow_multiplier) | round(1) }}
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_3_last_litres_helper }}"
+                                data:
+                                  value: "{{ z3_litres_used }}"
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_3_total_litres_helper }}"
+                                data:
+                                  value: >-
+                                    {{ ((states(zone_3_total_litres_helper) | float(0))
+                                        + z3_litres_used) | round(1) }}
+                      - choose:
+                          - conditions:
+                              - condition: template
                                 value_template: "{{ zone_3_last_watered != '' }}"
                             sequence:
                               - service: input_datetime.set_datetime
@@ -2713,6 +3098,32 @@ action:
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_4_valve }}"
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: >-
+                                  {{ zone_4_flow_rate_helper != ''
+                                     and zone_4_last_litres_helper != ''
+                                     and zone_4_total_litres_helper != '' }}
+                            sequence:
+                              - variables:
+                                  z4_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                                  z4_litres_used: >-
+                                    {{ ((z4_duration | float(0))
+                                        * (states(zone_4_flow_rate_helper) | float(0))
+                                        * z4_flow_multiplier) | round(1) }}
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_4_last_litres_helper }}"
+                                data:
+                                  value: "{{ z4_litres_used }}"
+                              - service: input_number.set_value
+                                target:
+                                  entity_id: "{{ zone_4_total_litres_helper }}"
+                                data:
+                                  value: >-
+                                    {{ ((states(zone_4_total_litres_helper) | float(0))
+                                        + z4_litres_used) | round(1) }}
                       - choose:
                           - conditions:
                               - condition: template

@@ -29,18 +29,20 @@
 # =============================================================================
 
 # ┌─────────────────────────────────────────────────────────────────────┐
-# │  REPLACE THESE WITH YOUR ACTUAL VALVE ENTITY IDs                    │
+# │  CONFIGURATION — Edit the values below, then save and reload HA     │
 # └─────────────────────────────────────────────────────────────────────┘
-# Zone 1 valve: switch.zone_1_valve
-# Zone 2 valve: switch.zone_2_valve
-# Zone 3 valve: switch.zone_3_valve
-# Zone 4 valve: switch.zone_4_valve
-#
-# Zone flow rates (L/min) — should match what you entered in the blueprint:
-# Zone 1: 5.0
-# Zone 2: 5.0
-# Zone 3: 5.0
-# Zone 4: 5.0
+# Replace the entity IDs and flow rates here; they are used throughout the file.
+
+homeassistant:
+  customize:
+    sensor.zone_1_water_total_litres:
+      device_class: water
+    sensor.zone_2_water_total_litres:
+      device_class: water
+    sensor.zone_3_water_total_litres:
+      device_class: water
+    sensor.zone_4_water_total_litres:
+      device_class: water
 
 # ---------------------------------------------------------------------------
 # Template sensors — real-time flow calculation
@@ -126,8 +128,7 @@ sensor:
     unique_id: garden_zone_1_water_total_litres
     source: sensor.zone_1_flow
     method: left
-    unit_prefix: none
-    unit: L
+    unit_time: min
     round: 2
 
   - platform: integration
@@ -135,8 +136,7 @@ sensor:
     unique_id: garden_zone_2_water_total_litres
     source: sensor.zone_2_flow
     method: left
-    unit_prefix: none
-    unit: L
+    unit_time: min
     round: 2
 
   - platform: integration
@@ -144,8 +144,7 @@ sensor:
     unique_id: garden_zone_3_water_total_litres
     source: sensor.zone_3_flow
     method: left
-    unit_prefix: none
-    unit: L
+    unit_time: min
     round: 2
 
   - platform: integration
@@ -153,6 +152,5 @@ sensor:
     unique_id: garden_zone_4_water_total_litres
     source: sensor.zone_4_flow
     method: left
-    unit_prefix: none
-    unit: L
+    unit_time: min
     round: 2

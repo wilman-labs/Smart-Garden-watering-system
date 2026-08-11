@@ -999,29 +999,18 @@ trigger:
     offset: "-02:30:00"
     id: reduced_morning
   # Manual valve closure triggers (for water usage tracking)
-  - platform: state
-    entity_id: !input zone_1_valve
-    to:
-      - "off"
-      - "closed"
+  # Only trigger if the valve entity is configured (non-empty)
+  - platform: template
+    value_template: "{{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closed'] }}"
     id: manual_zone_1
-  - platform: state
-    entity_id: !input zone_2_valve
-    to:
-      - "off"
-      - "closed"
+  - platform: template
+    value_template: "{{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closed'] }}"
     id: manual_zone_2
-  - platform: state
-    entity_id: !input zone_3_valve
-    to:
-      - "off"
-      - "closed"
+  - platform: template
+    value_template: "{{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closed'] }}"
     id: manual_zone_3
-  - platform: state
-    entity_id: !input zone_4_valve
-    to:
-      - "off"
-      - "closed"
+  - platform: template
+    value_template: "{{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closed'] }}"
     id: manual_zone_4
 
 # Run one instance at a time; manual valve triggers during a running cycle
@@ -1133,14 +1122,18 @@ action:
         value_template: "{{ _trigger_id.startswith('manual_zone_') }}"
     then:
       # Only process if manual tracking is enabled and this isn't
-      # a valve closure that was part of a scheduled cycle (queued mode
-      # means scheduled actions run as separate queue entries)
+      # a valve closure that was part of a scheduled cycle (single mode
+      # means scheduled closure triggers are dropped while a cycle runs)
       - condition: template
         value_template: "{{ track_manual_watering }}"
       - variables:
           _mz_zone: "{{ _trigger_id.replace('manual_zone_', '') | int }}"
           _mz_duration_min: >-
-            {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
+            {%- if trigger.from_state.state in ['on', 'open'] -%}
+              {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
+            {%- else -%}
+              0
+            {%- endif -%}
           _mz_flow: >-
             {{ [zone_1_flow_rate, zone_2_flow_rate, zone_3_flow_rate, zone_4_flow_rate][_mz_zone - 1] | float(5.0) }}
           _mz_multiplier: >-
@@ -1586,6 +1579,8 @@ action:
                               rw_z1_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z1_duration | int }}"
+                          - variables:
+                              rw_z1_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_1_valve }}"
@@ -1609,7 +1604,7 @@ action:
                                       _rw_z1_litres: >-
                                         {{ (rw_z1_duration | float
                                             * (zone_1_flow_rate | float(5.0))
-                                            * ((rw_z1_flow_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((rw_z1_flow_multiplier_start + rw_z1_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_1_last_litres_helper }}"
@@ -1658,6 +1653,8 @@ action:
                               rw_z2_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z2_duration | int }}"
+                          - variables:
+                              rw_z2_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_2_valve }}"
@@ -1681,7 +1678,7 @@ action:
                                       _rw_z2_litres: >-
                                         {{ (rw_z2_duration | float
                                             * (zone_2_flow_rate | float(5.0))
-                                            * ((rw_z2_flow_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((rw_z2_flow_multiplier_start + rw_z2_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_2_last_litres_helper }}"
@@ -1730,6 +1727,8 @@ action:
                               rw_z3_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z3_duration | int }}"
+                          - variables:
+                              rw_z3_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_3_valve }}"
@@ -1753,7 +1752,7 @@ action:
                                       _rw_z3_litres: >-
                                         {{ (rw_z3_duration | float
                                             * (zone_3_flow_rate | float(5.0))
-                                            * ((rw_z3_flow_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((rw_z3_flow_multiplier_start + rw_z3_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_3_last_litres_helper }}"
@@ -1802,6 +1801,8 @@ action:
                               rw_z4_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z4_duration | int }}"
+                          - variables:
+                              rw_z4_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_4_valve }}"
@@ -1825,7 +1826,7 @@ action:
                                       _rw_z4_litres: >-
                                         {{ (rw_z4_duration | float
                                             * (zone_4_flow_rate | float(5.0))
-                                            * ((rw_z4_flow_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((rw_z4_flow_multiplier_start + rw_z4_flow_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_4_last_litres_helper }}"
@@ -2315,6 +2316,8 @@ action:
                               _eve_z1_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z1_eve_duration | int }}"
+                          - variables:
+                              _eve_z1_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_1_valve }}"
@@ -2328,7 +2331,7 @@ action:
                                       _eve_z1_litres: >-
                                         {{ (z1_eve_duration | float
                                             * (zone_1_flow_rate | float(5.0))
-                                            * ((_eve_z1_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((_eve_z1_multiplier_start + _eve_z1_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_1_last_litres_helper }}"
@@ -2377,6 +2380,8 @@ action:
                               _eve_z2_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z2_eve_duration | int }}"
+                          - variables:
+                              _eve_z2_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_2_valve }}"
@@ -2390,7 +2395,7 @@ action:
                                       _eve_z2_litres: >-
                                         {{ (z2_eve_duration | float
                                             * (zone_2_flow_rate | float(5.0))
-                                            * ((_eve_z2_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((_eve_z2_multiplier_start + _eve_z2_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_2_last_litres_helper }}"
@@ -2439,6 +2444,8 @@ action:
                               _eve_z3_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z3_eve_duration | int }}"
+                          - variables:
+                              _eve_z3_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_3_valve }}"
@@ -2452,7 +2459,7 @@ action:
                                       _eve_z3_litres: >-
                                         {{ (z3_eve_duration | float
                                             * (zone_3_flow_rate | float(5.0))
-                                            * ((_eve_z3_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((_eve_z3_multiplier_start + _eve_z3_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_3_last_litres_helper }}"
@@ -2501,6 +2508,8 @@ action:
                               _eve_z4_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z4_eve_duration | int }}"
+                          - variables:
+                              _eve_z4_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_4_valve }}"
@@ -2514,7 +2523,7 @@ action:
                                       _eve_z4_litres: >-
                                         {{ (z4_eve_duration | float
                                             * (zone_4_flow_rate | float(5.0))
-                                            * ((_eve_z4_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                            * ((_eve_z4_multiplier_start + _eve_z4_multiplier_end) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_4_last_litres_helper }}"
@@ -3086,6 +3095,8 @@ action:
                           _z1_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z1_duration | int }}"
+                      - variables:
+                          _z1_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_1_valve }}"
@@ -3109,7 +3120,7 @@ action:
                                   _z1_litres: >-
                                     {{ (z1_duration | float
                                         * (zone_1_flow_rate | float(5.0))
-                                        * ((_z1_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                        * ((_z1_multiplier_start + _z1_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_1_last_litres_helper }}"
@@ -3159,6 +3170,8 @@ action:
                           _z2_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z2_duration | int }}"
+                      - variables:
+                          _z2_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_2_valve }}"
@@ -3182,7 +3195,7 @@ action:
                                   _z2_litres: >-
                                     {{ (z2_duration | float
                                         * (zone_2_flow_rate | float(5.0))
-                                        * ((_z2_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                        * ((_z2_multiplier_start + _z2_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_2_last_litres_helper }}"
@@ -3232,6 +3245,8 @@ action:
                           _z3_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z3_duration | int }}"
+                      - variables:
+                          _z3_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_3_valve }}"
@@ -3255,7 +3270,7 @@ action:
                                   _z3_litres: >-
                                     {{ (z3_duration | float
                                         * (zone_3_flow_rate | float(5.0))
-                                        * ((_z3_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                        * ((_z3_multiplier_start + _z3_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_3_last_litres_helper }}"
@@ -3305,6 +3320,8 @@ action:
                           _z4_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z4_duration | int }}"
+                      - variables:
+                          _z4_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_4_valve }}"
@@ -3328,7 +3345,7 @@ action:
                                   _z4_litres: >-
                                     {{ (z4_duration | float
                                         * (zone_4_flow_rate | float(5.0))
-                                        * ((_z4_multiplier_start + ({1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00))) / 2)) | round(1) }}
+                                        * ((_z4_multiplier_start + _z4_multiplier_end) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_4_last_litres_helper }}"

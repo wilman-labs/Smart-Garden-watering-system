@@ -238,7 +238,7 @@ If you want real-time flow sensors and HA Energy Dashboard water graphs (per-day
 #### Setup
 
 1. Download [`configuration/water_tracking_energy_dashboard.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/water_tracking_energy_dashboard.yaml)
-2. Replace the 4 valve entity IDs and flow rates at the top of the file
+2. Replace all occurrences of `switch.zone_X_valve` with your actual valve entity IDs, and replace every `5.0` flow rate literal in the template sensors with your actual per-zone flow rates (L/min)
 3. If using `valve` domain entities, change `'on'` to `'open'` in each `is_state()` call
 4. Add to `configuration.yaml`:
    ```yaml

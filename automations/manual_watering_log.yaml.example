@@ -1,0 +1,206 @@
+# =============================================================================
+# ⚠️  DEPRECATED — This file is no longer needed as of blueprint v0.9
+# =============================================================================
+# Manual valve tracking is now built directly into the main blueprint.
+# Enable "Track Manual Valve Use" in the blueprint's Water Usage Tracking
+# section instead.
+#
+# This file is kept for reference only. You can safely remove it from your
+# configuration.yaml and automations directory.
+# =============================================================================
+
+# =============================================================================
+# Manual Watering Log Automations — manual_watering_log.yaml
+# =============================================================================
+#
+# SETUP INSTRUCTIONS
+# ------------------
+# 1. Replace all placeholder valve entity IDs (switch.zone_X_valve) with your
+#    real Home Assistant valve/switch entity IDs.
+#
+# 2. Update the automation entity ID in the condition of each automation:
+#    Replace 'automation.smart_garden_watering' with the actual entity ID of
+#    your blueprint automation instance (visible in Settings → Automations).
+#
+# 3. Include this file in configuration.yaml. If you have no existing automation
+#    includes, add:
+#      automation: !include automations/manual_watering_log.yaml
+#    If you already use !include_dir_merge_list, place this file in the same
+#    automations directory and it will be picked up automatically.
+#
+# 4. These automations only fire when the blueprint automation is NOT currently
+#    executing, ensuring manual and automated usage are not double-counted.
+#    The condition uses the 'current' attribute (number of running instances)
+#    rather than the state string, which only reflects enabled/disabled.
+#
+# 5. NOTE: The flow multiplier is sampled at the moment the valve closes.
+#    If multiple zones were open for different durations during the session,
+#    the snapshot value is a reasonable approximation but not an exact average.
+#    This is acceptable given the general-impression goal of this tracking.
+#
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Zone 1 — Manual Watering Log
+# ---------------------------------------------------------------------------
+- id: garden_manual_watering_log_zone_1
+  alias: "Garden — Log Manual Watering Zone 1"
+  description: >
+    Tracks litres used when Zone 1 valve is closed manually (not via blueprint).
+    Updates input_number.zone_1_last_litres and adds to zone_1_total_litres.
+  mode: single
+  trigger:
+    - platform: state
+      # REPLACE with your real Zone 1 valve entity ID
+      entity_id: switch.zone_1_valve
+      from: "on"
+      to: "off"
+  condition:
+    - condition: template
+      # REPLACE automation.smart_garden_watering with your actual automation entity ID
+      # (visible in Settings → Automations → your automation → info icon)
+      value_template: >
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
+  action:
+    - variables:
+        manual_duration_min: >
+          {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
+        manual_litres: >
+          {{ (manual_duration_min
+              * (states('input_number.zone_1_flow_rate') | float(5.0))
+              * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_1_last_litres
+      data:
+        value: "{{ manual_litres }}"
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_1_total_litres
+      data:
+        value: >
+          {{ ((states('input_number.zone_1_total_litres') | float(0))
+              + manual_litres) | round(1) }}
+
+# ---------------------------------------------------------------------------
+# Zone 2 — Manual Watering Log
+# ---------------------------------------------------------------------------
+- id: garden_manual_watering_log_zone_2
+  alias: "Garden — Log Manual Watering Zone 2"
+  description: >
+    Tracks litres used when Zone 2 valve is closed manually (not via blueprint).
+    Updates input_number.zone_2_last_litres and adds to zone_2_total_litres.
+  mode: single
+  trigger:
+    - platform: state
+      # REPLACE with your real Zone 2 valve entity ID
+      entity_id: switch.zone_2_valve
+      from: "on"
+      to: "off"
+  condition:
+    - condition: template
+      # REPLACE automation.smart_garden_watering with your actual automation entity ID
+      value_template: >
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
+  action:
+    - variables:
+        manual_duration_min: >
+          {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
+        manual_litres: >
+          {{ (manual_duration_min
+              * (states('input_number.zone_2_flow_rate') | float(5.0))
+              * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_2_last_litres
+      data:
+        value: "{{ manual_litres }}"
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_2_total_litres
+      data:
+        value: >
+          {{ ((states('input_number.zone_2_total_litres') | float(0))
+              + manual_litres) | round(1) }}
+
+# ---------------------------------------------------------------------------
+# Zone 3 — Manual Watering Log
+# ---------------------------------------------------------------------------
+- id: garden_manual_watering_log_zone_3
+  alias: "Garden — Log Manual Watering Zone 3"
+  description: >
+    Tracks litres used when Zone 3 valve is closed manually (not via blueprint).
+    Updates input_number.zone_3_last_litres and adds to zone_3_total_litres.
+  mode: single
+  trigger:
+    - platform: state
+      # REPLACE with your real Zone 3 valve entity ID
+      entity_id: switch.zone_3_valve
+      from: "on"
+      to: "off"
+  condition:
+    - condition: template
+      # REPLACE automation.smart_garden_watering with your actual automation entity ID
+      value_template: >
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
+  action:
+    - variables:
+        manual_duration_min: >
+          {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
+        manual_litres: >
+          {{ (manual_duration_min
+              * (states('input_number.zone_3_flow_rate') | float(5.0))
+              * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_3_last_litres
+      data:
+        value: "{{ manual_litres }}"
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_3_total_litres
+      data:
+        value: >
+          {{ ((states('input_number.zone_3_total_litres') | float(0))
+              + manual_litres) | round(1) }}
+
+# ---------------------------------------------------------------------------
+# Zone 4 — Manual Watering Log
+# ---------------------------------------------------------------------------
+- id: garden_manual_watering_log_zone_4
+  alias: "Garden — Log Manual Watering Zone 4"
+  description: >
+    Tracks litres used when Zone 4 valve is closed manually (not via blueprint).
+    Updates input_number.zone_4_last_litres and adds to zone_4_total_litres.
+  mode: single
+  trigger:
+    - platform: state
+      # REPLACE with your real Zone 4 valve entity ID
+      entity_id: switch.zone_4_valve
+      from: "on"
+      to: "off"
+  condition:
+    - condition: template
+      # REPLACE automation.smart_garden_watering with your actual automation entity ID
+      value_template: >
+        {{ state_attr('automation.smart_garden_watering', 'current') | int(0) == 0 }}
+  action:
+    - variables:
+        manual_duration_min: >
+          {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
+        manual_litres: >
+          {{ (manual_duration_min
+              * (states('input_number.zone_4_flow_rate') | float(5.0))
+              * (states('sensor.flow_multiplier') | float(1.0))) | round(1) }}
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_4_last_litres
+      data:
+        value: "{{ manual_litres }}"
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.zone_4_total_litres
+      data:
+        value: >
+          {{ ((states('input_number.zone_4_total_litres') | float(0))
+              + manual_litres) | round(1) }}

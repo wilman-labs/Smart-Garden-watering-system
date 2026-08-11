@@ -185,7 +185,7 @@ The repository includes:
 When linked, the blueprint writes litres after each zone closes using:
 `duration_minutes × zone_flow_rate × sensor.flow_multiplier`.
 
-If any helper is left empty for a zone, blueprint water tracking is skipped for that zone (no errors, normal watering still runs).
+Tracking requires the **Flow Rate Helper** and **Last Litres Helper** for a zone. If either is empty, blueprint tracking is skipped for that zone; the **Total Litres Helper** is optional and only controls cumulative updates.
 
 ### Quick Start — Manual Installation
 

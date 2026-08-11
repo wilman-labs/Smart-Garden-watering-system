@@ -15,8 +15,8 @@ A [Home Assistant Blueprint](https://www.home-assistant.io/docs/blueprint/) for 
 | **Soil moisture integration** | Optional per-zone sensors to skip or force watering |
 | **4 independent zones** | Each zone has its own valve, sensor, and settings |
 | **Post-cycle summary notification** | Sends a per-zone summary (moisture, duration, skip reason) after every cycle, and notifies immediately on rain-skip |
-| **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM) using the stored morning forecast classification; zones whose soil is still below the skip threshold are watered again using a shorter per-zone evening duration |
-| **Reduced water consumption mode** | Toggle an `input_boolean` from any HA dashboard; food zones water at a configurable % of normal duration 2.5 hours before sunrise; non-food zones are skipped; evening check is disabled |
+| **Hot day evening check** | On hot days a second moisture check runs at a configurable evening time (default 8 PM) using the stored morning forecast classification; zones whose soil is still below the skip threshold water briefly |
+| **Reduced water consumption mode** | Toggle an `input_boolean` from any HA dashboard; food zones water at a configurable % of normal duration 2.5 hours before sunrise; non-food zones are skipped entirely |
 
 ---
 
@@ -36,25 +36,85 @@ Tracking works for **both automated (blueprint) and manual valve use** with no e
 | `automations/manual_watering_log.yaml` | Four automations (one per zone) that log litres used when a valve is closed manually, outside of the blueprint automation |
 | `configuration/lovelace_water_card.yaml` | Ready-to-paste Lovelace card showing flow rates, 7-day history graph, and running totals |
 
-### Quick Start
+### Quick Start — Manual Installation
 
-These three files live in this GitHub repository, but Home Assistant only reads files from **your own HA config directory** (usually `/config`, `~/.homeassistant`, or a similar install-specific path). In other words: **repo files are download sources; HA config files are the copies you place inside your Home Assistant installation.**
+These three files are in the GitHub repository, but Home Assistant only reads files from **your own HA config directory**. You must download them and place them there manually.
 
-1. **Choose an install method.**  
-   - **Automatic:** run `curl -fsSL https://raw.githubusercontent.com/wilman-labs/Smart-Garden-watering-system/main/scripts/install_water_tracking.sh -o /tmp/install_water_tracking.sh && bash /tmp/install_water_tracking.sh`  
-   - **Manual:** download the three repo files and copy them into your HA config directory.
-2. **Place the files in Home Assistant.**  
-   - `configuration/water_tracking.yaml` → `<HA_CONFIG>/configuration/water_tracking.yaml`  
-   - `automations/manual_watering_log.yaml` → `<HA_CONFIG>/automations/manual_watering_log.yaml`  
-   - `configuration/lovelace_water_card.yaml` → `<HA_CONFIG>/configuration/lovelace_water_card.yaml`
-3. **Replace placeholders.**  
-   In `water_tracking.yaml` and `manual_watering_log.yaml`, replace every `switch.zone_X_valve` placeholder with your real valve entity IDs. In `manual_watering_log.yaml`, also replace `automation.smart_garden_watering` with your actual blueprint automation entity ID.
-4. **Add the includes.**  
-   In `configuration.yaml`, add `homeassistant: packages: water_tracking: !include configuration/water_tracking.yaml` and include `automations/manual_watering_log.yaml` using your normal automation include pattern.
-5. **Reload HA and add the dashboard card.**  
-   Reload YAML (or restart Home Assistant), then paste `configuration/lovelace_water_card.yaml` into a Lovelace **Manual** card.
+#### Step 1: Download the files from GitHub
 
-> The install script above can be run from any directory. It downloads the repo files from GitHub, creates the `configuration/` and `automations/` folders inside your HA config if needed, offers to back up existing files, and can replace the placeholder entity IDs for you.
+Click each link below, then click **Raw**, and save the file:
+- [`configuration/water_tracking.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/water_tracking.yaml)
+- [`automations/manual_watering_log.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/automations/manual_watering_log.yaml)
+- [`configuration/lovelace_water_card.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/lovelace_water_card.yaml)
+
+#### Step 2: Place files in your HA config directory
+
+Copy the downloaded files into your Home Assistant config directory (the folder that contains `configuration.yaml`):
+
+```
+homeassistant/                              (your HA config directory)
+├── configuration/
+│   ├── water_tracking.yaml                 ← Paste here
+│   └── lovelace_water_card.yaml            ← Paste here
+├── automations/
+│   └── manual_watering_log.yaml            ← Paste here
+├── automations.yaml
+├── configuration.yaml
+└── blueprints/
+```
+
+If the `configuration/` or `automations/` directories don't exist, create them.
+
+#### Step 3: Replace placeholder valve entity IDs
+
+Open both files and replace all occurrences of `switch.zone_X_valve` with your **actual valve/switch entity IDs**.
+
+**In `configuration/water_tracking.yaml`** (lines 146–150, 169+, 182+, 195+, 208+):
+```yaml
+# Change from:
+is_state('switch.zone_1_valve', 'on')
+
+# To your actual valve entity (example):
+is_state('switch.my_garden_zone_1', 'on')
+```
+
+**In `automations/manual_watering_log.yaml`** (lines 44, 86, 128, 170):
+```yaml
+# Change from:
+entity_id: switch.zone_1_valve
+
+# To your actual valve entity:
+entity_id: switch.my_garden_zone_1
+```
+
+#### Step 4: Update the automation entity ID
+
+In `automations/manual_watering_log.yaml`, find `automation.smart_garden_watering` (lines 52, 93, 134, 175) and replace with your **actual blueprint automation entity ID**.
+
+Find it in HA:
+1. Go to **Settings → Automations & Scenes → Automations**
+2. Click your watering automation
+3. Note the entity ID from the URL or info icon (e.g., `automation.garden_watering_system`)
+
+#### Step 5: Add to configuration.yaml
+
+Edit your `homeassistant/configuration.yaml` and add:
+
+```yaml
+homeassistant:
+  packages:
+    water_tracking: !include configuration/water_tracking.yaml
+
+automation: !include automations/manual_watering_log.yaml
+```
+
+> **If you already have an `automation:` line**, merge it instead of replacing it. For example, if you have `automation: !include_dir_merge_list automations/`, place `manual_watering_log.yaml` in the `automations/` directory and it will be picked up automatically.
+
+#### Step 6: Reload Home Assistant
+
+Go to **Settings → Developer Tools → YAML → Reload All YAML** (or restart HA completely).
+
+✅ **Done!** Your water tracking system is now active.
 
 ### Flow Reduction Model
 
@@ -68,40 +128,6 @@ When multiple zones run simultaneously, pressure drop in the shared 15 mm supply
 | 4 | 0.62 | ~3.1 L/min |
 
 The `sensor.flow_multiplier` template sensor reads the active zone count and applies the correct coefficient automatically. All per-zone flow sensors inherit this multiplier, so Riemann Sum integrals accumulate the right volume whether one or all four zones are running.
-
-### Setup
-
-#### Step 1 — Add to `configuration.yaml`
-
-The simplest method is the HA packages system, which merges all platforms cleanly:
-
-```yaml
-# configuration.yaml
-homeassistant:
-  packages:
-    water_tracking: !include configuration/water_tracking.yaml
-```
-
-Also include the manual watering automations:
-
-```yaml
-# configuration.yaml  (in addition to any existing automation includes)
-automation: !include automations/manual_watering_log.yaml
-```
-
-> If you already use `!include_dir_merge_list automations/` for other automations, simply place `manual_watering_log.yaml` in that directory — it will be picked up automatically.
-
-#### Step 2 — Replace placeholder valve entity IDs
-
-Open `configuration/water_tracking.yaml` and `automations/manual_watering_log.yaml` and replace every occurrence of `switch.zone_X_valve` with your real HA valve or switch entity IDs.
-
-#### Step 3 — Update the automation entity ID
-
-In `automations/manual_watering_log.yaml`, replace `automation.smart_garden_watering` in the condition of each automation with the actual entity ID of your blueprint automation instance. Find it under **Settings → Automations** — it appears in the URL when you open the automation.
-
-#### Step 4 — Reload Home Assistant
-
-Go to **Settings → Developer Tools → YAML → Reload All YAML** (or restart HA).
 
 ### Energy Dashboard Integration
 
@@ -124,8 +150,7 @@ Paste the contents of `configuration/lovelace_water_card.yaml` into a **Manual c
 
 ### Option B — Manual
 
-1. Copy `blueprints/automation/smart_garden_watering.yaml` into your Home Assistant
-   config directory at:
+1. Copy `blueprints/automation/smart_garden_watering.yaml` into your Home Assistant config directory at:
    ```
    config/blueprints/automation/wilman-labs/smart_garden_watering.yaml
    ```

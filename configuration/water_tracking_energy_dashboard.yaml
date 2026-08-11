@@ -2,12 +2,15 @@
 # Water Usage Tracking — Energy Dashboard Sensors (OPTIONAL ADVANCED ADD-ON)
 # =============================================================================
 #
-# This file provides real-time flow sensors and Riemann Sum integration sensors
-# that can be added to the HA Energy Dashboard under the Water section. These
-# give you continuous per-day/week/month water usage statistics and graphs.
+# This file provides optional Home Assistant config for real-time flow sensors
+# and Riemann Sum integration sensors that can be added to the HA Energy
+# Dashboard under the Water section. These give you continuous per-day/week/
+# month water usage statistics and graphs.
 #
 # ⚠️  THIS FILE REQUIRES EDITING — replace the four valve entity IDs below
 #     with your actual valve/switch entity IDs.
+# ⚠️  This is NOT a Lovelace card file. Keep dashboard card YAML in
+#     lovelace_water_card.yaml and include this file only from configuration.yaml.
 #
 # If your valves use the "valve" domain (not "switch"), also change:
 #   'on'  →  'open'   in each is_state() call
@@ -154,4 +157,3 @@ sensor:
     method: left
     unit_time: min
     round: 2
-

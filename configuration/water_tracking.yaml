@@ -5,13 +5,16 @@
 # DROP-IN FILE — NO EDITS REQUIRED
 #
 # This file creates the input_number helpers used by the blueprint to store
-# water usage data. Simply include it in your configuration.yaml:
+# water usage data, plus read-only template sensors for Lovelace dashboards.
+# Simply include it in your configuration.yaml:
 #
 #   homeassistant:
 #     packages:
 #       water_tracking: !include configuration/water_tracking.yaml
 #
 # Then link the helpers in the blueprint UI under "Water Usage Tracking".
+# Use the generated sensor.* entities in dashboards when you want read-only
+# display rows instead of editable input_number boxes.
 #
 # =============================================================================
 
@@ -93,3 +96,60 @@ input_number:
     mode: box
     unit_of_measurement: "L"
     icon: mdi:water-outline
+
+# ---------------------------------------------------------------------------
+# template sensors — read-only mirrors for dashboard display
+# ---------------------------------------------------------------------------
+template:
+  - sensor:
+      - name: "Zone 1 Last Run Litres"
+        unique_id: zone_1_last_run_litres_sensor
+        unit_of_measurement: "L"
+        icon: mdi:water
+        state: "{{ states('input_number.zone_1_last_litres') | float(0) }}"
+
+      - name: "Zone 2 Last Run Litres"
+        unique_id: zone_2_last_run_litres_sensor
+        unit_of_measurement: "L"
+        icon: mdi:water
+        state: "{{ states('input_number.zone_2_last_litres') | float(0) }}"
+
+      - name: "Zone 3 Last Run Litres"
+        unique_id: zone_3_last_run_litres_sensor
+        unit_of_measurement: "L"
+        icon: mdi:water
+        state: "{{ states('input_number.zone_3_last_litres') | float(0) }}"
+
+      - name: "Zone 4 Last Run Litres"
+        unique_id: zone_4_last_run_litres_sensor
+        unit_of_measurement: "L"
+        icon: mdi:water
+        state: "{{ states('input_number.zone_4_last_litres') | float(0) }}"
+
+      - name: "Zone 1 Total Litres"
+        unique_id: zone_1_total_litres_sensor
+        unit_of_measurement: "L"
+        state_class: total_increasing
+        icon: mdi:water-outline
+        state: "{{ states('input_number.zone_1_total_litres') | float(0) }}"
+
+      - name: "Zone 2 Total Litres"
+        unique_id: zone_2_total_litres_sensor
+        unit_of_measurement: "L"
+        state_class: total_increasing
+        icon: mdi:water-outline
+        state: "{{ states('input_number.zone_2_total_litres') | float(0) }}"
+
+      - name: "Zone 3 Total Litres"
+        unique_id: zone_3_total_litres_sensor
+        unit_of_measurement: "L"
+        state_class: total_increasing
+        icon: mdi:water-outline
+        state: "{{ states('input_number.zone_3_total_litres') | float(0) }}"
+
+      - name: "Zone 4 Total Litres"
+        unique_id: zone_4_total_litres_sensor
+        unit_of_measurement: "L"
+        state_class: total_increasing
+        icon: mdi:water-outline
+        state: "{{ states('input_number.zone_4_total_litres') | float(0) }}"

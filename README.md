@@ -176,7 +176,7 @@ All configuration is done through the blueprint UI. You just need to:
 
 ### Quick Start — 3 Steps
 
-#### Step 1: Drop in the helpers file
+#### Step 1: Drop in the helpers + read-only sensor file
 
 Download [`configuration/water_tracking.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/water_tracking.yaml) and place it in your HA config directory:
 
@@ -204,9 +204,24 @@ Open your automation (or create one from the blueprint), expand **Water Usage Tr
 - Select the **Total Litres Helper** — e.g. `input_number.zone_1_total_litres`
 - Enable/disable **Track Manual Valve Use** (enabled by default)
 
-Reload YAML (**Settings → Developer Tools → YAML → Reload All YAML**) and you're done.
+Reload YAML (**Settings → Developer Tools → YAML → Reload All YAML**) so Home Assistant loads both the writable helpers and the read-only dashboard sensors, then you're done.
 
 ✅ **That's it!** No files to edit, no entity IDs to replace, no separate automations to manage.
+
+The file above creates these dashboard-friendly read-only mirror entities:
+
+- `sensor.zone_1_last_run_litres`
+- `sensor.zone_2_last_run_litres`
+- `sensor.zone_3_last_run_litres`
+- `sensor.zone_4_last_run_litres`
+- `sensor.zone_1_total_litres`
+- `sensor.zone_2_total_litres`
+- `sensor.zone_3_total_litres`
+- `sensor.zone_4_total_litres`
+
+Keep the original `input_number.zone_*_*_litres` helpers selected in the blueprint UI. The automation continues writing to those helpers, while Lovelace should reference the read-only `sensor.*` mirrors.
+
+If the new `sensor.*` mirrors do not appear after a YAML reload, perform a full Home Assistant restart so the package change is picked up.
 
 ### How Tracking Works
 
@@ -249,12 +264,14 @@ If you want real-time flow sensors and HA Energy Dashboard water graphs (per-day
    ```
 5. Reload HA, then go to **Settings → Energy → Water → Add water source** and select `sensor.zone_X_water_total_litres`
 
+> `configuration/water_tracking_energy_dashboard.yaml` is Home Assistant configuration only. Do not paste it into Lovelace; use `configuration/lovelace_water_card.yaml` for dashboard cards.
+
 ### Dashboard Card
 
 Paste the contents of [`configuration/lovelace_water_card.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/lovelace_water_card.yaml) into a **Manual card** on any Lovelace dashboard. It shows:
-- Live current flow per zone (if Energy Dashboard sensors are installed)
 - 7-day history graph of per-run litres
-- Running total litres per zone
+- Read-only last-run litres per zone
+- Read-only running total litres per zone
 
 ---
 

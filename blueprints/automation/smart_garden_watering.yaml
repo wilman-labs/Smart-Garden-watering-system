@@ -1100,6 +1100,10 @@ variables:
   zone_4_evening_water_no_sensor: !input zone_4_evening_water_no_sensor
   zone_4_is_food_zone: !input zone_4_is_food_zone
   # Water tracking
+  # NOTE: The inline flow multiplier expression is repeated across cycles because
+  # HA automation variables evaluate once at definition time. The multiplier must
+  # be sampled at different moments (start/end of each zone's run), so it cannot
+  # be a single top-level variable.
   zone_1_flow_rate: !input zone_1_flow_rate
   zone_1_last_litres_helper: !input zone_1_last_litres_helper
   zone_1_total_litres_helper: !input zone_1_total_litres_helper

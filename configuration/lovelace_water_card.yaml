@@ -1,0 +1,73 @@
+# =============================================================================
+# Lovelace Water Usage Dashboard Card — lovelace_water_card.yaml
+# =============================================================================
+#
+# USAGE
+# -----
+# Paste the YAML below into a Lovelace dashboard card via the HA UI:
+#   1. Open your dashboard → Edit → + Add Card → Manual card
+#   2. Paste the YAML below and save.
+#
+# Or reference this file from your ui-lovelace.yaml if using YAML mode.
+#
+# =============================================================================
+
+type: vertical-stack
+cards:
+
+  # Title banner
+  - type: markdown
+    content: |
+      ## 💧 Garden Water Usage
+      Live flow rates, per-run usage, and running totals for all four irrigation zones.
+
+  # 7-day history of per-run litres per zone
+  - type: history-graph
+    title: "Last-Run Litres per Zone (7 days)"
+    hours_to_show: 168
+    entities:
+      - entity: input_number.zone_1_last_litres
+        name: Zone 1
+      - entity: input_number.zone_2_last_litres
+        name: Zone 2
+      - entity: input_number.zone_3_last_litres
+        name: Zone 3
+      - entity: input_number.zone_4_last_litres
+        name: Zone 4
+
+  # Live flow rates, totals, and zone count at a glance
+  - type: entities
+    title: "Water Usage Summary"
+    entities:
+      - entity: sensor.active_zone_count
+        name: "Active Zones"
+        icon: mdi:counter
+      - entity: sensor.flow_multiplier
+        name: "Flow Multiplier"
+        icon: mdi:water-percent
+      - type: divider
+      - entity: sensor.zone_1_flow
+        name: "Zone 1 — Current Flow"
+        icon: mdi:water
+      - entity: sensor.zone_2_flow
+        name: "Zone 2 — Current Flow"
+        icon: mdi:water
+      - entity: sensor.zone_3_flow
+        name: "Zone 3 — Current Flow"
+        icon: mdi:water
+      - entity: sensor.zone_4_flow
+        name: "Zone 4 — Current Flow"
+        icon: mdi:water
+      - type: divider
+      - entity: input_number.zone_1_total_litres
+        name: "Zone 1 — Total Litres"
+        icon: mdi:water-outline
+      - entity: input_number.zone_2_total_litres
+        name: "Zone 2 — Total Litres"
+        icon: mdi:water-outline
+      - entity: input_number.zone_3_total_litres
+        name: "Zone 3 — Total Litres"
+        icon: mdi:water-outline
+      - entity: input_number.zone_4_total_litres
+        name: "Zone 4 — Total Litres"
+        icon: mdi:water-outline

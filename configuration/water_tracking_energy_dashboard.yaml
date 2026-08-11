@@ -155,17 +155,3 @@ sensor:
     unit_time: min
     round: 2
 
-# ---------------------------------------------------------------------------
-# Customizations to expose water device_class on integration sensors
-# ---------------------------------------------------------------------------
-# The Energy Dashboard requires device_class: water on the total sensors.
-homeassistant:
-  customize:
-    sensor.zone_1_water_total_litres:
-      device_class: water
-    sensor.zone_2_water_total_litres:
-      device_class: water
-    sensor.zone_3_water_total_litres:
-      device_class: water
-    sensor.zone_4_water_total_litres:
-      device_class: water

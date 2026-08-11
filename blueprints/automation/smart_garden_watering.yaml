@@ -1007,18 +1007,20 @@ trigger:
     offset: "-02:30:00"
     id: reduced_morning
   # Manual valve closure triggers (for water usage tracking)
-  # Only trigger if the valve entity is configured (non-empty)
+  # Only trigger if the valve entity is configured (non-empty).
+  # Also fires on 'closing' so that open→closing→closed valves capture
+  # the full open duration rather than the brief closing interval.
   - platform: template
-    value_template: "{{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closed'] }}"
+    value_template: "{{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closing', 'closed'] }}"
     id: manual_zone_1
   - platform: template
-    value_template: "{{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closed'] }}"
+    value_template: "{{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closing', 'closed'] }}"
     id: manual_zone_2
   - platform: template
-    value_template: "{{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closed'] }}"
+    value_template: "{{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closing', 'closed'] }}"
     id: manual_zone_3
   - platform: template
-    value_template: "{{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closed'] }}"
+    value_template: "{{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closing', 'closed'] }}"
     id: manual_zone_4
 
 # Run one instance at a time; manual valve triggers during a running cycle
@@ -1137,7 +1139,7 @@ action:
       - variables:
           _mz_zone: "{{ _trigger_id.replace('manual_zone_', '') | int }}"
           _mz_duration_min: >-
-            {%- if trigger.from_state.state in ['on', 'open'] -%}
+            {%- if trigger.from_state.state in ['on', 'open', 'opening'] -%}
               {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
             {%- else -%}
               0

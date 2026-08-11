@@ -1,0 +1,158 @@
+# =============================================================================
+# Water Usage Tracking — Energy Dashboard Sensors (OPTIONAL ADVANCED ADD-ON)
+# =============================================================================
+#
+# This file provides real-time flow sensors and Riemann Sum integration sensors
+# that can be added to the HA Energy Dashboard under the Water section. These
+# give you continuous per-day/week/month water usage statistics and graphs.
+#
+# ⚠️  THIS FILE REQUIRES EDITING — replace the four valve entity IDs below
+#     with your actual valve/switch entity IDs.
+#
+# If your valves use the "valve" domain (not "switch"), also change:
+#   'on'  →  'open'   in each is_state() call
+#
+# SETUP:
+# 1. Replace the 4 valve entity IDs below
+# 2. Set each zone's flow rate (L/min) to match the blueprint setting
+# 3. Add to configuration.yaml:
+#
+#      homeassistant:
+#        packages:
+#          water_tracking: !include configuration/water_tracking.yaml
+#          water_energy: !include configuration/water_tracking_energy_dashboard.yaml
+#
+# 4. Reload HA or restart
+# 5. Go to Settings → Energy → Water → Add water source → select
+#    sensor.zone_X_water_total_litres
+#
+# =============================================================================
+
+# ┌─────────────────────────────────────────────────────────────────────┐
+# │  REPLACE THESE WITH YOUR ACTUAL VALVE ENTITY IDs                    │
+# └─────────────────────────────────────────────────────────────────────┘
+# Zone 1 valve: switch.zone_1_valve
+# Zone 2 valve: switch.zone_2_valve
+# Zone 3 valve: switch.zone_3_valve
+# Zone 4 valve: switch.zone_4_valve
+#
+# Zone flow rates (L/min) — should match what you entered in the blueprint:
+# Zone 1: 5.0
+# Zone 2: 5.0
+# Zone 3: 5.0
+# Zone 4: 5.0
+
+# ---------------------------------------------------------------------------
+# Template sensors — real-time flow calculation
+# ---------------------------------------------------------------------------
+template:
+  - sensor:
+      # Count of currently active (open) zone valves
+      - name: "Active Zone Count"
+        unique_id: garden_active_zone_count
+        state: >
+          {{ [
+            is_state('switch.zone_1_valve', 'on'),
+            is_state('switch.zone_2_valve', 'on'),
+            is_state('switch.zone_3_valve', 'on'),
+            is_state('switch.zone_4_valve', 'on')
+          ] | select('equalto', true) | list | count }}
+        icon: mdi:counter
+
+      # Flow multiplier based on active zone count (shared-pipe pressure-drop)
+      # 1 zone: 1.00×, 2 zones: 0.84×, 3 zones: 0.70×, 4 zones: 0.62×
+      - name: "Flow Multiplier"
+        unique_id: garden_flow_multiplier
+        state: >
+          {% set n = states('sensor.active_zone_count') | int(0) %}
+          {% set multipliers = {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62} %}
+          {{ multipliers.get(n, 1.00) }}
+        icon: mdi:water-percent
+
+      # Per-zone effective flow (L/min) — 0 when valve is off
+      - name: "Zone 1 Flow"
+        unique_id: garden_zone_1_flow
+        unit_of_measurement: "L/min"
+        state: >
+          {% if is_state('switch.zone_1_valve', 'on') %}
+            {{ (5.0 * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:water
+
+      - name: "Zone 2 Flow"
+        unique_id: garden_zone_2_flow
+        unit_of_measurement: "L/min"
+        state: >
+          {% if is_state('switch.zone_2_valve', 'on') %}
+            {{ (5.0 * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:water
+
+      - name: "Zone 3 Flow"
+        unique_id: garden_zone_3_flow
+        unit_of_measurement: "L/min"
+        state: >
+          {% if is_state('switch.zone_3_valve', 'on') %}
+            {{ (5.0 * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:water
+
+      - name: "Zone 4 Flow"
+        unique_id: garden_zone_4_flow
+        unit_of_measurement: "L/min"
+        state: >
+          {% if is_state('switch.zone_4_valve', 'on') %}
+            {{ (5.0 * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:water
+
+# ---------------------------------------------------------------------------
+# Riemann Sum integral sensors (cumulative water volume per zone)
+# ---------------------------------------------------------------------------
+# These accumulate L/min over time to give total litres consumed.
+# They work automatically for BOTH automated (blueprint) AND manual valve use.
+# Add these to the HA Energy Dashboard under Settings → Energy → Water.
+sensor:
+  - platform: integration
+    name: "Zone 1 Water Total Litres"
+    unique_id: garden_zone_1_water_total_litres
+    source: sensor.zone_1_flow
+    method: left
+    unit_prefix: none
+    unit: L
+    round: 2
+
+  - platform: integration
+    name: "Zone 2 Water Total Litres"
+    unique_id: garden_zone_2_water_total_litres
+    source: sensor.zone_2_flow
+    method: left
+    unit_prefix: none
+    unit: L
+    round: 2
+
+  - platform: integration
+    name: "Zone 3 Water Total Litres"
+    unique_id: garden_zone_3_water_total_litres
+    source: sensor.zone_3_flow
+    method: left
+    unit_prefix: none
+    unit: L
+    round: 2
+
+  - platform: integration
+    name: "Zone 4 Water Total Litres"
+    unique_id: garden_zone_4_water_total_litres
+    source: sensor.zone_4_flow
+    method: left
+    unit_prefix: none
+    unit: L
+    round: 2

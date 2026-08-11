@@ -1,4 +1,15 @@
 # =============================================================================
+# ⚠️  DEPRECATED — This file is no longer needed as of blueprint v0.9
+# =============================================================================
+# Manual valve tracking is now built directly into the main blueprint.
+# Enable "Track Manual Valve Use" in the blueprint's Water Usage Tracking
+# section instead.
+#
+# This file is kept for reference only. You can safely remove it from your
+# configuration.yaml and automations directory.
+# =============================================================================
+
+# =============================================================================
 # Manual Watering Log Automations — manual_watering_log.yaml
 # =============================================================================
 #

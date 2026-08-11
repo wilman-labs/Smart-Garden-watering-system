@@ -1,70 +1,24 @@
 # =============================================================================
-# Water Usage Tracking — water_tracking.yaml
+# Water Usage Tracking — Helpers (water_tracking.yaml)
 # =============================================================================
 #
-# SETUP INSTRUCTIONS
-# ------------------
-# 1. Replace all placeholder valve entity IDs below (switch.zone_X_valve) with
-#    your real Home Assistant valve/switch entity IDs.
+# DROP-IN FILE — NO EDITS REQUIRED
 #
-# 2. Include this file in your configuration.yaml using the HA packages system,
-#    which merges all platforms (input_number, template, sensor) cleanly:
+# This file creates the input_number helpers used by the blueprint to store
+# water usage data. Simply include it in your configuration.yaml:
 #
-#      # configuration.yaml
-#      homeassistant:
-#        packages:
-#          water_tracking: !include configuration/water_tracking.yaml
+#   homeassistant:
+#     packages:
+#       water_tracking: !include configuration/water_tracking.yaml
 #
-#    Using packages is the recommended approach — it merges all platforms cleanly.
-#
-# 3. Reload Home Assistant or restart after adding this file.
-#
-# 4. These sensors work for BOTH automated (blueprint) and manual valve use —
-#    any time a valve entity is on, water accumulates automatically.
+# Then link the helpers in the blueprint UI under "Water Usage Tracking".
 #
 # =============================================================================
 
 # ---------------------------------------------------------------------------
-# input_number helpers
+# input_number helpers — per-zone litres tracking
 # ---------------------------------------------------------------------------
 input_number:
-
-  # -- Per-zone flow rates (L/min, configurable) --
-  zone_1_flow_rate:
-    name: "Zone 1 Flow Rate"
-    min: 0.1
-    max: 20
-    step: 0.1
-    unit_of_measurement: "L/min"
-    initial: 5.0
-    icon: mdi:water-pump
-
-  zone_2_flow_rate:
-    name: "Zone 2 Flow Rate"
-    min: 0.1
-    max: 20
-    step: 0.1
-    unit_of_measurement: "L/min"
-    initial: 5.0
-    icon: mdi:water-pump
-
-  zone_3_flow_rate:
-    name: "Zone 3 Flow Rate"
-    min: 0.1
-    max: 20
-    step: 0.1
-    unit_of_measurement: "L/min"
-    initial: 5.0
-    icon: mdi:water-pump
-
-  zone_4_flow_rate:
-    name: "Zone 4 Flow Rate"
-    min: 0.1
-    max: 20
-    step: 0.1
-    unit_of_measurement: "L/min"
-    initial: 5.0
-    icon: mdi:water-pump
 
   # -- Litres used in the last run (per zone) --
   zone_1_last_litres:
@@ -131,124 +85,3 @@ input_number:
     step: 0.1
     unit_of_measurement: "L"
     icon: mdi:water-outline
-
-# ---------------------------------------------------------------------------
-# Template sensors
-# ---------------------------------------------------------------------------
-template:
-  - sensor:
-      # Count of currently active (open) zone valves
-      # REPLACE switch.zone_X_valve with your real valve entity IDs
-      - name: "Active Zone Count"
-        unique_id: garden_active_zone_count
-        state: >
-          {{ [
-            is_state('switch.zone_1_valve', 'on'),
-            is_state('switch.zone_2_valve', 'on'),
-            is_state('switch.zone_3_valve', 'on'),
-            is_state('switch.zone_4_valve', 'on')
-          ] | select('equalto', true) | list | count }}
-        icon: mdi:counter
-
-      # Flow multiplier based on active zone count (parallel pressure-drop model)
-      # 1 zone: 1.00×, 2 zones: 0.84×, 3 zones: 0.70×, 4 zones: 0.62×
-      - name: "Flow Multiplier"
-        unique_id: garden_flow_multiplier
-        state: >
-          {% set n = states('sensor.active_zone_count') | int(0) %}
-          {% set multipliers = {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62} %}
-          {{ multipliers.get(n, 1.00) }}
-        icon: mdi:water-percent
-
-      # Per-zone effective flow (L/min) — 0 when valve is off
-      # REPLACE switch.zone_X_valve with your real valve entity IDs
-      - name: "Zone 1 Flow"
-        unique_id: garden_zone_1_flow
-        unit_of_measurement: "L/min"
-        state: >
-          {% if is_state('switch.zone_1_valve', 'on') %}
-            {{ (states('input_number.zone_1_flow_rate') | float(5.0)
-               * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
-          {% else %}
-            0
-          {% endif %}
-        icon: mdi:water
-
-      - name: "Zone 2 Flow"
-        unique_id: garden_zone_2_flow
-        unit_of_measurement: "L/min"
-        state: >
-          {% if is_state('switch.zone_2_valve', 'on') %}
-            {{ (states('input_number.zone_2_flow_rate') | float(5.0)
-               * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
-          {% else %}
-            0
-          {% endif %}
-        icon: mdi:water
-
-      - name: "Zone 3 Flow"
-        unique_id: garden_zone_3_flow
-        unit_of_measurement: "L/min"
-        state: >
-          {% if is_state('switch.zone_3_valve', 'on') %}
-            {{ (states('input_number.zone_3_flow_rate') | float(5.0)
-               * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
-          {% else %}
-            0
-          {% endif %}
-        icon: mdi:water
-
-      - name: "Zone 4 Flow"
-        unique_id: garden_zone_4_flow
-        unit_of_measurement: "L/min"
-        state: >
-          {% if is_state('switch.zone_4_valve', 'on') %}
-            {{ (states('input_number.zone_4_flow_rate') | float(5.0)
-               * states('sensor.flow_multiplier') | float(1.0)) | round(2) }}
-          {% else %}
-            0
-          {% endif %}
-        icon: mdi:water
-
-# ---------------------------------------------------------------------------
-# Riemann Sum integral sensors (cumulative water volume per zone)
-# ---------------------------------------------------------------------------
-# These accumulate L/min over time to give total litres consumed.
-# They work automatically for both blueprint-automated and manual valve use.
-# Add these to the HA Energy dashboard under the Water section for graphing.
-sensor:
-  - platform: integration
-    name: "Zone 1 Water Total Litres"
-    unique_id: garden_zone_1_water_total_litres
-    source: sensor.zone_1_flow
-    method: left
-    unit_prefix: none
-    unit: L
-    round: 2
-
-  - platform: integration
-    name: "Zone 2 Water Total Litres"
-    unique_id: garden_zone_2_water_total_litres
-    source: sensor.zone_2_flow
-    method: left
-    unit_prefix: none
-    unit: L
-    round: 2
-
-  - platform: integration
-    name: "Zone 3 Water Total Litres"
-    unique_id: garden_zone_3_water_total_litres
-    source: sensor.zone_3_flow
-    method: left
-    unit_prefix: none
-    unit: L
-    round: 2
-
-  - platform: integration
-    name: "Zone 4 Water Total Litres"
-    unique_id: garden_zone_4_water_total_litres
-    source: sensor.zone_4_flow
-    method: left
-    unit_prefix: none
-    unit: L
-    round: 2

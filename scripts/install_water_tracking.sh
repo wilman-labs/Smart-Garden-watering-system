@@ -110,6 +110,7 @@ detect_ha_config_dir() {
 
 prepare_ha_config_dir() {
   local dir="$1"
+  local repo_path
 
   if [[ ! -d "$dir" ]]; then
     if prompt_yes_no "Directory '$dir' does not exist. Create it? [y/N]" "n"; then
@@ -125,7 +126,9 @@ prepare_ha_config_dir() {
     prompt_yes_no "Continue anyway? [y/N]" "n" || error "Installation cancelled."
   fi
 
-  mkdir -p "$dir/configuration" "$dir/automations"
+  for repo_path in "${FILES[@]}"; do
+    mkdir -p "$dir/$(dirname "$repo_path")"
+  done
 }
 
 download_file() {
@@ -145,7 +148,7 @@ download_file() {
 }
 
 sed_escape() {
-  printf '%s' "$1" | sed 's/[\/&]/\\&/g'
+  printf '%s' "$1" | sed 's/[\/|\\&]/\\&/g'
 }
 
 replace_placeholder() {
@@ -267,6 +270,7 @@ main() {
   maybe_backup_existing_files "$HA_CONFIG_DIR" "$timestamp"
 
   for repo_path in "${FILES[@]}"; do
+    mkdir -p "$(dirname "${HA_CONFIG_DIR}/${repo_path}")"
     cp "${temp_dir}/${repo_path}" "${HA_CONFIG_DIR}/${repo_path}"
     chmod 0644 "${HA_CONFIG_DIR}/${repo_path}"
     info "Installed ${repo_path} -> ${HA_CONFIG_DIR}/${repo_path}"

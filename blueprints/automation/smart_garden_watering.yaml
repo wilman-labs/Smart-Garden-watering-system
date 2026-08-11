@@ -985,6 +985,14 @@ blueprint:
           selector:
             boolean: {}
 
+# ── Trigger Variables ─────────────────────────────────────────────────
+# These are needed so trigger templates can reference blueprint inputs.
+trigger_variables:
+  zone_1_valve: !input zone_1_valve
+  zone_2_valve: !input zone_2_valve
+  zone_3_valve: !input zone_3_valve
+  zone_4_valve: !input zone_4_valve
+
 # ── Trigger ──────────────────────────────────────────────────────────
 trigger:
   - platform: sun

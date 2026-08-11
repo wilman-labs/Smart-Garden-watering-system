@@ -159,94 +159,36 @@ If you use Google Home, Alexa, or Siri Shortcuts, expose the `input_boolean` thr
 
 The water tracking system provides a general impression of water consumption across all four irrigation zones. It automatically accounts for **parallel zone operation** — when multiple valves open simultaneously, per-zone flow is reduced due to pressure drop in the shared 15 mm supply.
 
-Tracking works for **automated blueprint cycles** and can optionally include **manual valve use**.
+All configuration is done through the blueprint UI. You just need to:
+1. Drop in one YAML file (no edits required)
+2. Add one line to `configuration.yaml`
+3. Select the helpers in the blueprint UI
 
 ### What You Get
 
-The repository includes:
-
-| File | Purpose |
+| Feature | How it works |
 |---|---|
-| `configuration/water_tracking.yaml` | `input_number` helpers and template sensors used by the blueprint tracking inputs, plus Riemann Sum integral sensors for cumulative totals |
-| `automations/manual_watering_log.yaml` | Optional: four automations (one per zone) that log litres when a valve is closed manually, outside of the blueprint automation |
-| `configuration/lovelace_water_card.yaml` | Ready-to-paste Lovelace card showing flow rates, 7-day history graph, and running totals |
+| **Per-zone flow rate** | Configured directly in the blueprint UI (L/min number input) |
+| **Last run litres** | Blueprint calculates and writes to `input_number` helper after each zone runs |
+| **Running total litres** | Cumulative counter updated automatically |
+| **Manual valve tracking** | Built into the main blueprint — no separate automation needed |
+| **Energy Dashboard integration** | Optional advanced add-on (separate file, requires valve entity IDs) |
 
-When the helpers are linked, the blueprint writes litres after each zone closes using:
-`duration_minutes × zone_flow_rate × ((multiplier_at_start + multiplier_at_end) / 2)`,
-where `multiplier_at_start` and `multiplier_at_end` are the values of `sensor.flow_multiplier` sampled at the beginning and end of each zone's run. Averaging the two samples corrects for zones that finish while concurrent zones are still running.
+### Quick Start — 3 Steps
 
-Tracking requires the **Flow Rate Helper** and **Last Litres Helper** for a zone. If either is empty, blueprint tracking is skipped for that zone; the **Total Litres Helper** is optional and only controls cumulative updates.
+#### Step 1: Drop in the helpers file
 
-### Quick Start — Manual Installation
-
-These three files are in the GitHub repository, but Home Assistant only reads files from **your own HA config directory**. You must download them and place them there manually.
-
-#### Step 1: Download the files from GitHub
-
-Click each link below, then click **Raw**, and save the file to your computer:
-- [`configuration/water_tracking.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/water_tracking.yaml)
-- [`automations/manual_watering_log.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/automations/manual_watering_log.yaml)
-- [`configuration/lovelace_water_card.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/lovelace_water_card.yaml)
-
-#### Step 2: Place files in your HA config directory
-
-Copy the downloaded files into your Home Assistant config directory (the folder that contains `configuration.yaml`):
+Download [`configuration/water_tracking.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/water_tracking.yaml) and place it in your HA config directory:
 
 ```
-homeassistant/                              (your HA config directory)
+homeassistant/
 ├── configuration/
-│   ├── water_tracking.yaml                 ← Paste here
-│   └── lovelace_water_card.yaml            ← Paste here
-├── automations/
-│   └── manual_watering_log.yaml            ← Paste here
-├── automations.yaml
+│   └── water_tracking.yaml    ← Drop here (NO EDITS NEEDED)
 ├── configuration.yaml
 └── blueprints/
 ```
 
-If the `configuration/` or `automations/` directories don't exist, create them.
-
-#### Step 3: Replace placeholder valve entity IDs
-
-Open both files and replace all occurrences of `switch.zone_X_valve` with your **actual valve/switch entity IDs**.
-
-> **Note on entity domain and state strings:** The placeholder entity IDs use the `switch` domain, which reports `on`/`off`. If your actual entities use the `valve` domain, they report `open`/`closed` instead. In that case you must also update the state strings in `configuration/water_tracking.yaml` (replace `'on'` with `'open'`) and in `automations/manual_watering_log.yaml` (replace `'on'` with `'open'` and `'off'` with `'closed'`).
-
-**In `configuration/water_tracking.yaml`** (lines 146–150, 169+, 182+, 195+, 208+):
-```yaml
-# Change from (switch entity):
-is_state('switch.zone_1_valve', 'on')
-
-# To your actual switch entity (example):
-is_state('switch.my_garden_zone_1', 'on')
-
-# Or, if using a valve entity, also update the state string:
-is_state('valve.my_garden_zone_1', 'open')
-```
-
-**In `automations/manual_watering_log.yaml`** (lines 44, 86, 128, 170):
-```yaml
-# Change from:
-entity_id: switch.zone_1_valve
-
-# To your actual entity:
-entity_id: switch.my_garden_zone_1   # switch: triggers on 'on' → 'off'
-# entity_id: valve.my_garden_zone_1  # valve: update trigger to 'open' → 'closed'
-```
-
-#### Step 4: (Optional) Update the automation entity ID for manual logging
-
-Only required if you want manual valve usage included.
-In `automations/manual_watering_log.yaml`, find `automation.smart_garden_watering` (lines 52, 93, 134, 175) and replace with your **actual blueprint automation entity ID**.
-
-Find it in HA:
-1. Go to **Settings → Automations & Scenes → Automations**
-2. Click your watering automation
-3. Note the entity ID from the URL or info icon (e.g., `automation.garden_watering_system`)
-
-#### Step 5: Add to configuration.yaml
-
-Edit your `homeassistant/configuration.yaml` and add the `homeassistant.packages` block:
+#### Step 2: Add to configuration.yaml
 
 ```yaml
 homeassistant:
@@ -254,48 +196,63 @@ homeassistant:
     water_tracking: !include configuration/water_tracking.yaml
 ```
 
-The `manual_watering_log.yaml` automation is optional (manual valve tracking only). Choose **one** of the following methods to include it depending on your existing setup:
+#### Step 3: Link in the blueprint UI
 
-**Option A — No existing `automation:` key** (clean config):
-```yaml
-automation: !include automations/manual_watering_log.yaml
+Open your automation (or create one from the blueprint), expand **Water Usage Tracking**, and:
+- Set each zone's **Flow Rate** (L/min) — typically 5.0 for standard garden irrigation
+- Select the **Last Run Litres Helper** — e.g. `input_number.zone_1_last_litres`
+- Select the **Total Litres Helper** — e.g. `input_number.zone_1_total_litres`
+- Enable/disable **Track Manual Valve Use** (enabled by default)
+
+Reload YAML (**Settings → Developer Tools → YAML → Reload All YAML**) and you're done.
+
+✅ **That's it!** No files to edit, no entity IDs to replace, no separate automations to manage.
+
+### How Tracking Works
+
+The blueprint calculates litres after each zone closes:
+
+```
+litres = duration_minutes × flow_rate × pressure_multiplier
 ```
 
-**Option B — Existing `automation: !include automations.yaml`** (single-file include):
-Open `automations.yaml` and append the contents of `automations/manual_watering_log.yaml` directly to that file. Do **not** add a second `automation:` key to `configuration.yaml`.
+The pressure multiplier accounts for parallel operation:
 
-**Option C — Existing `automation: !include_dir_merge_list automations/`** (directory include):
-Move or copy `manual_watering_log.yaml` into the `automations/` directory referenced by the include directive. It will be picked up automatically on the next reload.
-
-> You cannot have two `automation:` keys in `configuration.yaml`. Adding one when another already exists will silently override the first, breaking your existing automations.
-
-#### Step 6: Reload Home Assistant
-
-Go to **Settings → Developer Tools → YAML → Reload All YAML** (or restart HA completely).
-
-✅ **Done!** Helper/sensor entities are active; then link them in the blueprint UI section above.
-
-### Flow Reduction Model
-
-When multiple zones run simultaneously, pressure drop in the shared 15 mm supply reduces per-zone flow. A simple lookup-table multiplier is applied automatically:
-
-| Zones Active | Per-Zone Multiplier | Per-Zone Flow |
+| Zones Active | Per-Zone Multiplier | Per-Zone Flow (at 5 L/min base) |
 |---|---|---|
-| 1 | 1.00 | ~5.0 L/min |
-| 2 | 0.84 | ~4.2 L/min |
-| 3 | 0.70 | ~3.5 L/min |
-| 4 | 0.62 | ~3.1 L/min |
+| 1 | 1.00 | 5.0 L/min |
+| 2 | 0.84 | 4.2 L/min |
+| 3 | 0.70 | 3.5 L/min |
+| 4 | 0.62 | 3.1 L/min |
 
-The `sensor.flow_multiplier` template sensor reads the active zone count and applies the correct coefficient automatically. All per-zone flow sensors inherit this multiplier, so Riemann Sum integrals accumulate the right volume whether one or all four zones are running.
+### Manual Valve Tracking
 
-### Energy Dashboard Integration
+When **Track Manual Valve Use** is enabled in the blueprint, any valve that is opened and then closed while the scheduled automation is NOT running will have its water usage logged automatically. This replaces the separate `manual_watering_log.yaml` automations from previous versions.
 
-The Riemann Sum sensors (`sensor.zone_1_water_total_litres` through `sensor.zone_4_water_total_litres`) can be added to the HA **Energy dashboard** under the **Water** section for historical graphing and statistics. They accumulate automatically for both automated and manual valve use.
+### Energy Dashboard Integration *(Optional Advanced Add-On)*
+
+If you want real-time flow sensors and HA Energy Dashboard water graphs (per-day/week/month statistics), an additional file provides Riemann Sum integration sensors.
+
+**This file DOES require editing** — you must replace the placeholder valve entity IDs with your actual ones.
+
+#### Setup
+
+1. Download [`configuration/water_tracking_energy_dashboard.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/water_tracking_energy_dashboard.yaml)
+2. Replace all occurrences of `switch.zone_X_valve` with your actual valve entity IDs, and replace every `5.0` flow rate literal in the template sensors with your actual per-zone flow rates (L/min)
+3. If using `valve` domain entities, change `'on'` to `'open'` in each `is_state()` call
+4. Add to `configuration.yaml`:
+   ```yaml
+   homeassistant:
+     packages:
+       water_tracking: !include configuration/water_tracking.yaml
+       water_energy: !include configuration/water_tracking_energy_dashboard.yaml
+   ```
+5. Reload HA, then go to **Settings → Energy → Water → Add water source** and select `sensor.zone_X_water_total_litres`
 
 ### Dashboard Card
 
-Paste the contents of `configuration/lovelace_water_card.yaml` into a **Manual card** on any Lovelace dashboard (**Edit → + Add Card → Manual**). It shows:
-- Live current flow per zone (accounting for parallel pressure reduction)
+Paste the contents of [`configuration/lovelace_water_card.yaml`](https://github.com/wilman-labs/Smart-Garden-watering-system/blob/main/configuration/lovelace_water_card.yaml) into a **Manual card** on any Lovelace dashboard. It shows:
+- Live current flow per zone (if Energy Dashboard sensors are installed)
 - 7-day history graph of per-run litres
 - Running total litres per zone
 

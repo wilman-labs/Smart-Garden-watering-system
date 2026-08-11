@@ -1586,6 +1586,8 @@ action:
                                               value: >-
                                                 {{ ((states(zone_2_total_litres_helper) | float(0))
                                                     + _rw_z2_litres) | round(1) }}
+          - sequence:
+              - alias: "Reduced — Zone 3 water if due"
                 choose:
                   - conditions:
                       - condition: template
@@ -1656,6 +1658,8 @@ action:
                                               value: >-
                                                 {{ ((states(zone_3_total_litres_helper) | float(0))
                                                     + _rw_z3_litres) | round(1) }}
+          - sequence:
+              - alias: "Reduced — Zone 4 water if due"
                 choose:
                   - conditions:
                       - condition: template

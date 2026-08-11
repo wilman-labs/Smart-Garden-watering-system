@@ -1456,7 +1456,7 @@ action:
                           seconds: 2
                       - alias: "Reduced — Zone 1 check valve responded"
                         variables:
-                          rw_z1_valve_offline: "{{ states(zone_1_valve) in ['unavailable', 'unknown'] }}"
+                          rw_z1_valve_offline: "{{ states(zone_1_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -1467,10 +1467,10 @@ action:
                                   entity_id: "{{ zone_1_valve }}"
                               - variables:
                                   rw_z1_should_water: false
-                                  rw_z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
+                                  rw_z1_result: "⚠️ FAILED — valve did not activate ({{ zone_1_valve }})"
                         default:
                           - variables:
-                              rw_z1_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              rw_z1_flow_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z1_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1496,7 +1496,7 @@ action:
                                       _rw_z1_litres: >-
                                         {{ (rw_z1_duration | float
                                             * (states(zone_1_flow_rate_helper) | float(5.0))
-                                            * rw_z1_flow_multiplier) | round(1) }}
+                                            * ((rw_z1_flow_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_1_last_litres_helper }}"
@@ -1528,7 +1528,7 @@ action:
                           seconds: 2
                       - alias: "Reduced — Zone 2 check valve responded"
                         variables:
-                          rw_z2_valve_offline: "{{ states(zone_2_valve) in ['unavailable', 'unknown'] }}"
+                          rw_z2_valve_offline: "{{ states(zone_2_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -1539,10 +1539,10 @@ action:
                                   entity_id: "{{ zone_2_valve }}"
                               - variables:
                                   rw_z2_should_water: false
-                                  rw_z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
+                                  rw_z2_result: "⚠️ FAILED — valve did not activate ({{ zone_2_valve }})"
                         default:
                           - variables:
-                              rw_z2_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              rw_z2_flow_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z2_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1568,7 +1568,7 @@ action:
                                       _rw_z2_litres: >-
                                         {{ (rw_z2_duration | float
                                             * (states(zone_2_flow_rate_helper) | float(5.0))
-                                            * rw_z2_flow_multiplier) | round(1) }}
+                                            * ((rw_z2_flow_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_2_last_litres_helper }}"
@@ -1600,7 +1600,7 @@ action:
                           seconds: 2
                       - alias: "Reduced — Zone 3 check valve responded"
                         variables:
-                          rw_z3_valve_offline: "{{ states(zone_3_valve) in ['unavailable', 'unknown'] }}"
+                          rw_z3_valve_offline: "{{ states(zone_3_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -1611,10 +1611,10 @@ action:
                                   entity_id: "{{ zone_3_valve }}"
                               - variables:
                                   rw_z3_should_water: false
-                                  rw_z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
+                                  rw_z3_result: "⚠️ FAILED — valve did not activate ({{ zone_3_valve }})"
                         default:
                           - variables:
-                              rw_z3_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              rw_z3_flow_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z3_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1640,7 +1640,7 @@ action:
                                       _rw_z3_litres: >-
                                         {{ (rw_z3_duration | float
                                             * (states(zone_3_flow_rate_helper) | float(5.0))
-                                            * rw_z3_flow_multiplier) | round(1) }}
+                                            * ((rw_z3_flow_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_3_last_litres_helper }}"
@@ -1672,7 +1672,7 @@ action:
                           seconds: 2
                       - alias: "Reduced — Zone 4 check valve responded"
                         variables:
-                          rw_z4_valve_offline: "{{ states(zone_4_valve) in ['unavailable', 'unknown'] }}"
+                          rw_z4_valve_offline: "{{ states(zone_4_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -1683,10 +1683,10 @@ action:
                                   entity_id: "{{ zone_4_valve }}"
                               - variables:
                                   rw_z4_should_water: false
-                                  rw_z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
+                                  rw_z4_result: "⚠️ FAILED — valve did not activate ({{ zone_4_valve }})"
                         default:
                           - variables:
-                              rw_z4_flow_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              rw_z4_flow_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ rw_z4_duration | int }}"
                           - service: homeassistant.turn_off
@@ -1712,7 +1712,7 @@ action:
                                       _rw_z4_litres: >-
                                         {{ (rw_z4_duration | float
                                             * (states(zone_4_flow_rate_helper) | float(5.0))
-                                            * rw_z4_flow_multiplier) | round(1) }}
+                                            * ((rw_z4_flow_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_4_last_litres_helper }}"
@@ -2185,7 +2185,7 @@ action:
                           seconds: 2
                       - alias: "Zone 1 — check valve responded (evening)"
                         variables:
-                          z1_eve_valve_offline: "{{ states(zone_1_valve) in ['unavailable', 'unknown'] }}"
+                          z1_eve_valve_offline: "{{ states(zone_1_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -2196,10 +2196,10 @@ action:
                                   entity_id: "{{ zone_1_valve }}"
                               - variables:
                                   z1_eve_should_water: false
-                                  z1_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
+                                  z1_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_1_valve }})"
                         default:
                           - variables:
-                              _eve_z1_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              _eve_z1_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ z1_eve_duration | int }}"
                           - service: homeassistant.turn_off
@@ -2215,7 +2215,7 @@ action:
                                       _eve_z1_litres: >-
                                         {{ (z1_eve_duration | float
                                             * (states(zone_1_flow_rate_helper) | float(5.0))
-                                            * _eve_z1_multiplier) | round(1) }}
+                                            * ((_eve_z1_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_1_last_litres_helper }}"
@@ -2247,7 +2247,7 @@ action:
                           seconds: 2
                       - alias: "Zone 2 — check valve responded (evening)"
                         variables:
-                          z2_eve_valve_offline: "{{ states(zone_2_valve) in ['unavailable', 'unknown'] }}"
+                          z2_eve_valve_offline: "{{ states(zone_2_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -2258,10 +2258,10 @@ action:
                                   entity_id: "{{ zone_2_valve }}"
                               - variables:
                                   z2_eve_should_water: false
-                                  z2_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
+                                  z2_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_2_valve }})"
                         default:
                           - variables:
-                              _eve_z2_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              _eve_z2_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ z2_eve_duration | int }}"
                           - service: homeassistant.turn_off
@@ -2277,7 +2277,7 @@ action:
                                       _eve_z2_litres: >-
                                         {{ (z2_eve_duration | float
                                             * (states(zone_2_flow_rate_helper) | float(5.0))
-                                            * _eve_z2_multiplier) | round(1) }}
+                                            * ((_eve_z2_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_2_last_litres_helper }}"
@@ -2309,7 +2309,7 @@ action:
                           seconds: 2
                       - alias: "Zone 3 — check valve responded (evening)"
                         variables:
-                          z3_eve_valve_offline: "{{ states(zone_3_valve) in ['unavailable', 'unknown'] }}"
+                          z3_eve_valve_offline: "{{ states(zone_3_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -2320,10 +2320,10 @@ action:
                                   entity_id: "{{ zone_3_valve }}"
                               - variables:
                                   z3_eve_should_water: false
-                                  z3_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
+                                  z3_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_3_valve }})"
                         default:
                           - variables:
-                              _eve_z3_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              _eve_z3_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ z3_eve_duration | int }}"
                           - service: homeassistant.turn_off
@@ -2339,7 +2339,7 @@ action:
                                       _eve_z3_litres: >-
                                         {{ (z3_eve_duration | float
                                             * (states(zone_3_flow_rate_helper) | float(5.0))
-                                            * _eve_z3_multiplier) | round(1) }}
+                                            * ((_eve_z3_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_3_last_litres_helper }}"
@@ -2371,7 +2371,7 @@ action:
                           seconds: 2
                       - alias: "Zone 4 — check valve responded (evening)"
                         variables:
-                          z4_eve_valve_offline: "{{ states(zone_4_valve) in ['unavailable', 'unknown'] }}"
+                          z4_eve_valve_offline: "{{ states(zone_4_valve) not in ['on', 'open', 'opening'] }}"
                       - choose:
                           - conditions:
                               - condition: template
@@ -2382,10 +2382,10 @@ action:
                                   entity_id: "{{ zone_4_valve }}"
                               - variables:
                                   z4_eve_should_water: false
-                                  z4_eve_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
+                                  z4_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_4_valve }})"
                         default:
                           - variables:
-                              _eve_z4_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                              _eve_z4_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                           - delay:
                               minutes: "{{ z4_eve_duration | int }}"
                           - service: homeassistant.turn_off
@@ -2401,7 +2401,7 @@ action:
                                       _eve_z4_litres: >-
                                         {{ (z4_eve_duration | float
                                             * (states(zone_4_flow_rate_helper) | float(5.0))
-                                            * _eve_z4_multiplier) | round(1) }}
+                                            * ((_eve_z4_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                                   - service: input_number.set_value
                                     target:
                                       entity_id: "{{ zone_4_last_litres_helper }}"
@@ -2956,7 +2956,7 @@ action:
                   - alias: "Zone 1 — check valve responded"
                     variables:
                       z1_valve_state: "{{ states(zone_1_valve) }}"
-                      z1_valve_offline: "{{ z1_valve_state in ['unavailable', 'unknown'] }}"
+                      z1_valve_offline: "{{ z1_valve_state not in ['on', 'open', 'opening'] }}"
                   - choose:
                       - conditions:
                           - condition: template
@@ -2967,10 +2967,10 @@ action:
                               entity_id: "{{ zone_1_valve }}"
                           - variables:
                               z1_should_water: false
-                              z1_result: "⚠️ OFFLINE — valve did not respond ({{ zone_1_valve }})"
+                              z1_result: "⚠️ FAILED — valve did not activate ({{ zone_1_valve }})"
                     default:
                       - variables:
-                          _z1_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                          _z1_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                       - delay:
                           minutes: "{{ z1_duration | int }}"
                       - service: homeassistant.turn_off
@@ -2996,7 +2996,7 @@ action:
                                   _z1_litres: >-
                                     {{ (z1_duration | float
                                         * (states(zone_1_flow_rate_helper) | float(5.0))
-                                        * _z1_multiplier) | round(1) }}
+                                        * ((_z1_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_1_last_litres_helper }}"
@@ -3029,7 +3029,7 @@ action:
                   - alias: "Zone 2 — check valve responded"
                     variables:
                       z2_valve_state: "{{ states(zone_2_valve) }}"
-                      z2_valve_offline: "{{ z2_valve_state in ['unavailable', 'unknown'] }}"
+                      z2_valve_offline: "{{ z2_valve_state not in ['on', 'open', 'opening'] }}"
                   - choose:
                       - conditions:
                           - condition: template
@@ -3040,10 +3040,10 @@ action:
                               entity_id: "{{ zone_2_valve }}"
                           - variables:
                               z2_should_water: false
-                              z2_result: "⚠️ OFFLINE — valve did not respond ({{ zone_2_valve }})"
+                              z2_result: "⚠️ FAILED — valve did not activate ({{ zone_2_valve }})"
                     default:
                       - variables:
-                          _z2_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                          _z2_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                       - delay:
                           minutes: "{{ z2_duration | int }}"
                       - service: homeassistant.turn_off
@@ -3069,7 +3069,7 @@ action:
                                   _z2_litres: >-
                                     {{ (z2_duration | float
                                         * (states(zone_2_flow_rate_helper) | float(5.0))
-                                        * _z2_multiplier) | round(1) }}
+                                        * ((_z2_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_2_last_litres_helper }}"
@@ -3102,7 +3102,7 @@ action:
                   - alias: "Zone 3 — check valve responded"
                     variables:
                       z3_valve_state: "{{ states(zone_3_valve) }}"
-                      z3_valve_offline: "{{ z3_valve_state in ['unavailable', 'unknown'] }}"
+                      z3_valve_offline: "{{ z3_valve_state not in ['on', 'open', 'opening'] }}"
                   - choose:
                       - conditions:
                           - condition: template
@@ -3113,10 +3113,10 @@ action:
                               entity_id: "{{ zone_3_valve }}"
                           - variables:
                               z3_should_water: false
-                              z3_result: "⚠️ OFFLINE — valve did not respond ({{ zone_3_valve }})"
+                              z3_result: "⚠️ FAILED — valve did not activate ({{ zone_3_valve }})"
                     default:
                       - variables:
-                          _z3_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                          _z3_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                       - delay:
                           minutes: "{{ z3_duration | int }}"
                       - service: homeassistant.turn_off
@@ -3142,7 +3142,7 @@ action:
                                   _z3_litres: >-
                                     {{ (z3_duration | float
                                         * (states(zone_3_flow_rate_helper) | float(5.0))
-                                        * _z3_multiplier) | round(1) }}
+                                        * ((_z3_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_3_last_litres_helper }}"
@@ -3175,7 +3175,7 @@ action:
                   - alias: "Zone 4 — check valve responded"
                     variables:
                       z4_valve_state: "{{ states(zone_4_valve) }}"
-                      z4_valve_offline: "{{ z4_valve_state in ['unavailable', 'unknown'] }}"
+                      z4_valve_offline: "{{ z4_valve_state not in ['on', 'open', 'opening'] }}"
                   - choose:
                       - conditions:
                           - condition: template
@@ -3186,10 +3186,10 @@ action:
                               entity_id: "{{ zone_4_valve }}"
                           - variables:
                               z4_should_water: false
-                              z4_result: "⚠️ OFFLINE — valve did not respond ({{ zone_4_valve }})"
+                              z4_result: "⚠️ FAILED — valve did not activate ({{ zone_4_valve }})"
                     default:
                       - variables:
-                          _z4_multiplier: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
+                          _z4_multiplier_start: "{{ states('sensor.flow_multiplier') | float(1.0) }}"
                       - delay:
                           minutes: "{{ z4_duration | int }}"
                       - service: homeassistant.turn_off
@@ -3215,7 +3215,7 @@ action:
                                   _z4_litres: >-
                                     {{ (z4_duration | float
                                         * (states(zone_4_flow_rate_helper) | float(5.0))
-                                        * _z4_multiplier) | round(1) }}
+                                        * ((_z4_multiplier_start + (states('sensor.flow_multiplier') | float(1.0))) / 2)) | round(1) }}
                               - service: input_number.set_value
                                 target:
                                   entity_id: "{{ zone_4_last_litres_helper }}"

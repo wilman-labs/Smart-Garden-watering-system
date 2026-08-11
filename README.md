@@ -172,7 +172,8 @@ The repository includes:
 | `configuration/lovelace_water_card.yaml` | Ready-to-paste Lovelace card showing flow rates, 7-day history graph, and running totals |
 
 When the helpers are linked, the blueprint writes litres after each zone closes using:
-`duration_minutes × zone_flow_rate × sensor.flow_multiplier`.
+`duration_minutes × zone_flow_rate × ((multiplier_at_start + multiplier_at_end) / 2)`,
+where `multiplier_at_start` and `multiplier_at_end` are the values of `sensor.flow_multiplier` sampled at the beginning and end of each zone's run. Averaging the two samples corrects for zones that finish while concurrent zones are still running.
 
 Tracking requires the **Flow Rate Helper** and **Last Litres Helper** for a zone. If either is empty, blueprint tracking is skipped for that zone; the **Total Litres Helper** is optional and only controls cumulative updates.
 
@@ -209,13 +210,18 @@ If the `configuration/` or `automations/` directories don't exist, create them.
 
 Open both files and replace all occurrences of `switch.zone_X_valve` with your **actual valve/switch entity IDs**.
 
+> **Note on entity domain and state strings:** The placeholder entity IDs use the `switch` domain, which reports `on`/`off`. If your actual entities use the `valve` domain, they report `open`/`closed` instead. In that case you must also update the state strings in `configuration/water_tracking.yaml` (replace `'on'` with `'open'`) and in `automations/manual_watering_log.yaml` (replace `'on'` with `'open'` and `'off'` with `'closed'`).
+
 **In `configuration/water_tracking.yaml`** (lines 146–150, 169+, 182+, 195+, 208+):
 ```yaml
-# Change from:
+# Change from (switch entity):
 is_state('switch.zone_1_valve', 'on')
 
-# To your actual valve entity (example):
+# To your actual switch entity (example):
 is_state('switch.my_garden_zone_1', 'on')
+
+# Or, if using a valve entity, also update the state string:
+is_state('valve.my_garden_zone_1', 'open')
 ```
 
 **In `automations/manual_watering_log.yaml`** (lines 44, 86, 128, 170):
@@ -223,8 +229,9 @@ is_state('switch.my_garden_zone_1', 'on')
 # Change from:
 entity_id: switch.zone_1_valve
 
-# To your actual valve entity:
-entity_id: switch.my_garden_zone_1
+# To your actual entity:
+entity_id: switch.my_garden_zone_1   # switch: triggers on 'on' → 'off'
+# entity_id: valve.my_garden_zone_1  # valve: update trigger to 'open' → 'closed'
 ```
 
 #### Step 4: (Optional) Update the automation entity ID for manual logging
@@ -239,19 +246,28 @@ Find it in HA:
 
 #### Step 5: Add to configuration.yaml
 
-Edit your `homeassistant/configuration.yaml` and add:
+Edit your `homeassistant/configuration.yaml` and add the `homeassistant.packages` block:
 
 ```yaml
 homeassistant:
   packages:
     water_tracking: !include configuration/water_tracking.yaml
+```
 
+The `manual_watering_log.yaml` automation is optional (manual valve tracking only). Choose **one** of the following methods to include it depending on your existing setup:
+
+**Option A — No existing `automation:` key** (clean config):
+```yaml
 automation: !include automations/manual_watering_log.yaml
 ```
 
-`automation: !include automations/manual_watering_log.yaml` is optional (manual tracking only).
+**Option B — Existing `automation: !include automations.yaml`** (single-file include):
+Open `automations.yaml` and append the contents of `automations/manual_watering_log.yaml` directly to that file. Do **not** add a second `automation:` key to `configuration.yaml`.
 
-> **If you already have an `automation:` line**, merge it instead of replacing it. For example, if you have `automation: !include_dir_merge_list automations/`, place `manual_watering_log.yaml` in the `automations/` directory and it will be picked up automatically.
+**Option C — Existing `automation: !include_dir_merge_list automations/`** (directory include):
+Move or copy `manual_watering_log.yaml` into the `automations/` directory referenced by the include directive. It will be picked up automatically on the next reload.
+
+> You cannot have two `automation:` keys in `configuration.yaml`. Adding one when another already exists will silently override the first, breaking your existing automations.
 
 #### Step 6: Reload Home Assistant
 

@@ -171,18 +171,7 @@ The repository includes:
 | `automations/manual_watering_log.yaml` | Optional: four automations (one per zone) that log litres when a valve is closed manually, outside of the blueprint automation |
 | `configuration/lovelace_water_card.yaml` | Ready-to-paste Lovelace card showing flow rates, 7-day history graph, and running totals |
 
-### How to Enable Water Tracking (Blueprint UI)
-
-1. Install and include `configuration/water_tracking.yaml` (steps below), then reload Home Assistant.
-2. Open your automation created from this blueprint.
-3. Expand **Water Usage Tracking (optional)**.
-4. For each zone, link the three helper inputs from `water_tracking.yaml`:
-   - **Flow Rate Helper** → `input_number.zone_X_flow_rate`
-   - **Last Litres Helper** → `input_number.zone_X_last_litres`
-   - **Total Litres Helper** → `input_number.zone_X_total_litres`
-5. Save the automation.
-
-When linked, the blueprint writes litres after each zone closes using:
+When the helpers are linked, the blueprint writes litres after each zone closes using:
 `duration_minutes × zone_flow_rate × sensor.flow_multiplier`.
 
 Tracking requires the **Flow Rate Helper** and **Last Litres Helper** for a zone. If either is empty, blueprint tracking is skipped for that zone; the **Total Litres Helper** is optional and only controls cumulative updates.

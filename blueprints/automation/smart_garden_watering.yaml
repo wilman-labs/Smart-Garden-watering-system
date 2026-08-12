@@ -1,5 +1,5 @@
 blueprint:
-  name: Smart Garden Watering System v0.9
+  name: Smart Garden Watering System v0.10.0
   description: >-
     Automatic 4-zone garden watering system that adapts to daily weather forecasts
     and optional soil moisture sensors.
@@ -968,7 +968,7 @@ trigger:
   # The 'not_from' filter prevents firing when valves transition from
   # unavailable/unknown (e.g. HA restart, Zigbee reconnection).
   - platform: state
-    entity_id: !input zone_1_valve
+    entity_id: "{{ zone_1_valve if zone_1_valve else 'sun.sun' }}"
     to:
       - "off"
       - "closed"
@@ -977,9 +977,9 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_1
-    enabled: "{{ zone_1_valve != '' }}"
+    enabled: "{{ zone_1_valve not in ['', none] }}"
   - platform: state
-    entity_id: !input zone_2_valve
+    entity_id: "{{ zone_2_valve if zone_2_valve else 'sun.sun' }}"
     to:
       - "off"
       - "closed"
@@ -988,9 +988,9 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_2
-    enabled: "{{ zone_2_valve != '' }}"
+    enabled: "{{ zone_2_valve not in ['', none] }}"
   - platform: state
-    entity_id: !input zone_3_valve
+    entity_id: "{{ zone_3_valve if zone_3_valve else 'sun.sun' }}"
     to:
       - "off"
       - "closed"
@@ -999,9 +999,9 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_3
-    enabled: "{{ zone_3_valve != '' }}"
+    enabled: "{{ zone_3_valve not in ['', none] }}"
   - platform: state
-    entity_id: !input zone_4_valve
+    entity_id: "{{ zone_4_valve if zone_4_valve else 'sun.sun' }}"
     to:
       - "off"
       - "closed"
@@ -1010,7 +1010,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_4
-    enabled: "{{ zone_4_valve != '' }}"
+    enabled: "{{ zone_4_valve not in ['', none] }}"
 
 # Run one instance at a time; manual valve triggers during a running cycle
 # are silently dropped (the scheduled cycle already tracks its own litres).

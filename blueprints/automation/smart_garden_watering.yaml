@@ -965,32 +965,27 @@ trigger:
     offset: "-02:30:00"
     id: reduced_morning
   # Manual valve closure triggers (for water usage tracking)
-  # Only trigger if the valve entity is configured (non-empty) AND the
-  # previous state was a genuine open state (not unavailable/unknown).
+  # Only trigger if the valve entity is configured (non-empty).
   # The 'for' debounce prevents spurious fires during HA restart, entity
   # reloads, and brief transient states.
   - platform: template
     value_template: >-
-      {{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closing', 'closed']
-         and state_attr(zone_1_valve, 'last_changed') is not none }}
+      {{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closing', 'closed'] }}
     for: "00:00:03"
     id: manual_zone_1
   - platform: template
     value_template: >-
-      {{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closing', 'closed']
-         and state_attr(zone_2_valve, 'last_changed') is not none }}
+      {{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closing', 'closed'] }}
     for: "00:00:03"
     id: manual_zone_2
   - platform: template
     value_template: >-
-      {{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closing', 'closed']
-         and state_attr(zone_3_valve, 'last_changed') is not none }}
+      {{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closing', 'closed'] }}
     for: "00:00:03"
     id: manual_zone_3
   - platform: template
     value_template: >-
-      {{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closing', 'closed']
-         and state_attr(zone_4_valve, 'last_changed') is not none }}
+      {{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closing', 'closed'] }}
     for: "00:00:03"
     id: manual_zone_4
 
@@ -1104,12 +1099,15 @@ action:
       # means scheduled closure triggers are dropped while a cycle runs)
       - condition: template
         value_template: "{{ track_manual_watering }}"
-      # Guard: skip if the automation was triggered by a scheduled cycle
-      # within the last 120 seconds — prevents re-firing immediately after
-      # a morning/evening/reduced cycle completes and valves close.
+      # Guard: skip if this automation ran within the last 120 seconds.
+      # This prevents the template trigger from re-firing when valves close
+      # at the end of a scheduled cycle. Trade-off: a genuine manual valve
+      # use within 2 min of any cycle end is also ignored — acceptable since
+      # the from_state duration check below would yield near-zero litres anyway.
       - condition: template
         value_template: >-
-          {{ (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered | default(0))) > 120 }}
+          {{ this.attributes.last_triggered is none or
+             (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered)) > 120 }}
       - variables:
           _mz_zone: "{{ _trigger_id.replace('manual_zone_', '') | int }}"
           _mz_duration_min: >-

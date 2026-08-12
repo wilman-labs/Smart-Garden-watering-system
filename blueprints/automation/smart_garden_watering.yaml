@@ -358,7 +358,7 @@ blueprint:
           description: >-
             The switch, valve, or input_boolean entity that opens the water
             valve for Zone 1.
-          default: ""
+          default: "sun.sun"
           selector:
             entity:
               domain:
@@ -520,7 +520,7 @@ blueprint:
 
         zone_2_valve:
           name: "Zone 2 — Valve"
-          default: ""
+          default: "sun.sun"
           selector:
             entity:
               domain:
@@ -669,7 +669,7 @@ blueprint:
 
         zone_3_valve:
           name: "Zone 3 — Valve"
-          default: ""
+          default: "sun.sun"
           selector:
             entity:
               domain:
@@ -818,7 +818,7 @@ blueprint:
 
         zone_4_valve:
           name: "Zone 4 — Valve"
-          default: ""
+          default: "sun.sun"
           selector:
             entity:
               domain:
@@ -968,7 +968,7 @@ trigger:
   # The 'not_from' filter prevents firing when valves transition from
   # unavailable/unknown (e.g. HA restart, Zigbee reconnection).
   - platform: state
-    entity_id: "{{ zone_1_valve if zone_1_valve else 'sun.sun' }}"
+    entity_id: !input zone_1_valve
     to:
       - "off"
       - "closed"
@@ -977,9 +977,9 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_1
-    enabled: "{{ zone_1_valve not in ['', none] }}"
+    enabled: "{{ zone_1_valve not in ['sun.sun', '', none] }}"
   - platform: state
-    entity_id: "{{ zone_2_valve if zone_2_valve else 'sun.sun' }}"
+    entity_id: !input zone_2_valve
     to:
       - "off"
       - "closed"
@@ -988,9 +988,9 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_2
-    enabled: "{{ zone_2_valve not in ['', none] }}"
+    enabled: "{{ zone_2_valve not in ['sun.sun', '', none] }}"
   - platform: state
-    entity_id: "{{ zone_3_valve if zone_3_valve else 'sun.sun' }}"
+    entity_id: !input zone_3_valve
     to:
       - "off"
       - "closed"
@@ -999,9 +999,9 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_3
-    enabled: "{{ zone_3_valve not in ['', none] }}"
+    enabled: "{{ zone_3_valve not in ['sun.sun', '', none] }}"
   - platform: state
-    entity_id: "{{ zone_4_valve if zone_4_valve else 'sun.sun' }}"
+    entity_id: !input zone_4_valve
     to:
       - "off"
       - "closed"
@@ -1010,7 +1010,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_4
-    enabled: "{{ zone_4_valve not in ['', none] }}"
+    enabled: "{{ zone_4_valve not in ['sun.sun', '', none] }}"
 
 # Run one instance at a time; manual valve triggers during a running cycle
 # are silently dropped (the scheduled cycle already tracks its own litres).
@@ -1139,10 +1139,10 @@ action:
             {{ flow_rate | float(5.0) }}
           _mz_multiplier: >-
             {{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get(
-              [(zone_1_valve != '' and states(zone_1_valve) in ['on','open']),
-               (zone_2_valve != '' and states(zone_2_valve) in ['on','open']),
-               (zone_3_valve != '' and states(zone_3_valve) in ['on','open']),
-               (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])]
+              [(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']),
+               (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']),
+               (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']),
+               (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])]
               | select('equalto', true) | list | count + 1, 1.00) }}
           _mz_litres: >-
             {{ (_mz_duration_min | float * _mz_flow | float * _mz_multiplier | float) | round(1) }}
@@ -1297,14 +1297,14 @@ action:
             {{ [1, ((rw_z1_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
           rw_z1_should_water: >-
             {{ (zone_1_enabled | bool(false))
-               and (zone_1_valve != '')
+               and (zone_1_valve not in ['', 'sun.sun'])
                and (zone_1_is_food_zone | bool(false))
                and ((rw_z1_interval_due | bool(false)) or (rw_z1_force_water | bool(false)))
                and not (rw_z1_skip_moisture | bool(false)) }}
           rw_z1_result: >-
             {% if not (zone_1_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_1_valve == '' %}
+            {% elif zone_1_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif not (zone_1_is_food_zone | bool(false)) %}
               ⏭ Skipped — not a food zone
@@ -1372,14 +1372,14 @@ action:
             {{ [1, ((rw_z2_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
           rw_z2_should_water: >-
             {{ (zone_2_enabled | bool(false))
-               and (zone_2_valve != '')
+               and (zone_2_valve not in ['', 'sun.sun'])
                and (zone_2_is_food_zone | bool(false))
                and ((rw_z2_interval_due | bool(false)) or (rw_z2_force_water | bool(false)))
                and not (rw_z2_skip_moisture | bool(false)) }}
           rw_z2_result: >-
             {% if not (zone_2_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_2_valve == '' %}
+            {% elif zone_2_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif not (zone_2_is_food_zone | bool(false)) %}
               ⏭ Skipped — not a food zone
@@ -1447,14 +1447,14 @@ action:
             {{ [1, ((rw_z3_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
           rw_z3_should_water: >-
             {{ (zone_3_enabled | bool(false))
-               and (zone_3_valve != '')
+               and (zone_3_valve not in ['', 'sun.sun'])
                and (zone_3_is_food_zone | bool(false))
                and ((rw_z3_interval_due | bool(false)) or (rw_z3_force_water | bool(false)))
                and not (rw_z3_skip_moisture | bool(false)) }}
           rw_z3_result: >-
             {% if not (zone_3_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_3_valve == '' %}
+            {% elif zone_3_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif not (zone_3_is_food_zone | bool(false)) %}
               ⏭ Skipped — not a food zone
@@ -1522,14 +1522,14 @@ action:
             {{ [1, ((rw_z4_base_duration | int) * (reduced_water_food_zone_percent | int(50)) / 100) | round | int] | max }}
           rw_z4_should_water: >-
             {{ (zone_4_enabled | bool(false))
-               and (zone_4_valve != '')
+               and (zone_4_valve not in ['', 'sun.sun'])
                and (zone_4_is_food_zone | bool(false))
                and ((rw_z4_interval_due | bool(false)) or (rw_z4_force_water | bool(false)))
                and not (rw_z4_skip_moisture | bool(false)) }}
           rw_z4_result: >-
             {% if not (zone_4_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_4_valve == '' %}
+            {% elif zone_4_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif not (zone_4_is_food_zone | bool(false)) %}
               ⏭ Skipped — not a food zone
@@ -1580,11 +1580,11 @@ action:
                                   rw_z1_result: "⚠️ FAILED — valve did not activate ({{ zone_1_valve }})"
                         default:
                           - variables:
-                              rw_z1_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z1_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z1_duration | int }}"
                           - variables:
-                              rw_z1_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z1_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_1_valve }}"
@@ -1654,11 +1654,11 @@ action:
                                   rw_z2_result: "⚠️ FAILED — valve did not activate ({{ zone_2_valve }})"
                         default:
                           - variables:
-                              rw_z2_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z2_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z2_duration | int }}"
                           - variables:
-                              rw_z2_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z2_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_2_valve }}"
@@ -1728,11 +1728,11 @@ action:
                                   rw_z3_result: "⚠️ FAILED — valve did not activate ({{ zone_3_valve }})"
                         default:
                           - variables:
-                              rw_z3_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z3_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z3_duration | int }}"
                           - variables:
-                              rw_z3_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z3_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_3_valve }}"
@@ -1802,11 +1802,11 @@ action:
                                   rw_z4_result: "⚠️ FAILED — valve did not activate ({{ zone_4_valve }})"
                         default:
                           - variables:
-                              rw_z4_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z4_flow_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ rw_z4_duration | int }}"
                           - variables:
-                              rw_z4_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              rw_z4_flow_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_4_valve }}"
@@ -2111,7 +2111,7 @@ action:
             {% endif %}
           z1_eve_should_water: >-
             {{ (zone_1_enabled | bool(false))
-               and (zone_1_valve != '')
+               and (zone_1_valve not in ['', 'sun.sun'])
                and not (z1_eve_moisture_wet | bool(false))
                and (
                  z1_eve_sensor_ok or
@@ -2121,7 +2121,7 @@ action:
           z1_eve_result: >-
             {% if not (zone_1_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_1_valve == '' %}
+            {% elif zone_1_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif z1_eve_moisture_wet | bool(false) %}
               ⏭ Skipped — moisture {{ z1_eve_moisture_val | round(0) | int }}% above {{ zone_1_moisture_skip_threshold }}%
@@ -2159,7 +2159,7 @@ action:
             {% endif %}
           z2_eve_should_water: >-
             {{ (zone_2_enabled | bool(false))
-               and (zone_2_valve != '')
+               and (zone_2_valve not in ['', 'sun.sun'])
                and not (z2_eve_moisture_wet | bool(false))
                and (
                  z2_eve_sensor_ok or
@@ -2169,7 +2169,7 @@ action:
           z2_eve_result: >-
             {% if not (zone_2_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_2_valve == '' %}
+            {% elif zone_2_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif z2_eve_moisture_wet | bool(false) %}
               ⏭ Skipped — moisture {{ z2_eve_moisture_val | round(0) | int }}% above {{ zone_2_moisture_skip_threshold }}%
@@ -2207,7 +2207,7 @@ action:
             {% endif %}
           z3_eve_should_water: >-
             {{ (zone_3_enabled | bool(false))
-               and (zone_3_valve != '')
+               and (zone_3_valve not in ['', 'sun.sun'])
                and not (z3_eve_moisture_wet | bool(false))
                and (
                  z3_eve_sensor_ok or
@@ -2217,7 +2217,7 @@ action:
           z3_eve_result: >-
             {% if not (zone_3_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_3_valve == '' %}
+            {% elif zone_3_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif z3_eve_moisture_wet | bool(false) %}
               ⏭ Skipped — moisture {{ z3_eve_moisture_val | round(0) | int }}% above {{ zone_3_moisture_skip_threshold }}%
@@ -2255,7 +2255,7 @@ action:
             {% endif %}
           z4_eve_should_water: >-
             {{ (zone_4_enabled | bool(false))
-               and (zone_4_valve != '')
+               and (zone_4_valve not in ['', 'sun.sun'])
                and not (z4_eve_moisture_wet | bool(false))
                and (
                  z4_eve_sensor_ok or
@@ -2265,7 +2265,7 @@ action:
           z4_eve_result: >-
             {% if not (zone_4_enabled | bool(false)) %}
               ⏭ Disabled
-            {% elif zone_4_valve == '' %}
+            {% elif zone_4_valve in ['', 'sun.sun'] %}
               ⏭ No valve configured
             {% elif z4_eve_moisture_wet | bool(false) %}
               ⏭ Skipped — moisture {{ z4_eve_moisture_val | round(0) | int }}% above {{ zone_4_moisture_skip_threshold }}%
@@ -2317,11 +2317,11 @@ action:
                                   z1_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_1_valve }})"
                         default:
                           - variables:
-                              _eve_z1_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z1_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z1_eve_duration | int }}"
                           - variables:
-                              _eve_z1_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z1_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_1_valve }}"
@@ -2381,11 +2381,11 @@ action:
                                   z2_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_2_valve }})"
                         default:
                           - variables:
-                              _eve_z2_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z2_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z2_eve_duration | int }}"
                           - variables:
-                              _eve_z2_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z2_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_2_valve }}"
@@ -2445,11 +2445,11 @@ action:
                                   z3_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_3_valve }})"
                         default:
                           - variables:
-                              _eve_z3_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z3_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z3_eve_duration | int }}"
                           - variables:
-                              _eve_z3_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z3_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_3_valve }}"
@@ -2509,11 +2509,11 @@ action:
                                   z4_eve_result: "⚠️ FAILED — valve did not activate ({{ zone_4_valve }})"
                         default:
                           - variables:
-                              _eve_z4_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z4_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - delay:
                               minutes: "{{ z4_eve_duration | int }}"
                           - variables:
-                              _eve_z4_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                              _eve_z4_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                           - service: homeassistant.turn_off
                             target:
                               entity_id: "{{ zone_4_valve }}"
@@ -2815,13 +2815,13 @@ action:
         {% endif %}
       z1_should_water: >-
         {{ (zone_1_enabled | bool(false))
-           and (zone_1_valve != '')
+           and (zone_1_valve not in ['', 'sun.sun'])
            and ((z1_interval_due | bool(false)) or (z1_force_water | bool(false)))
            and not (z1_skip_moisture | bool(false)) }}
       z1_result: >-
         {% if not (zone_1_enabled | bool(false)) %}
           ⏭ Disabled
-        {% elif zone_1_valve == '' %}
+        {% elif zone_1_valve in ['', 'sun.sun'] %}
           ⏭ No valve configured
         {% elif z1_skip_moisture | bool(false) %}
           ⏭ Skipped — soil moisture {{ z1_moisture_val | round(0) | int }}% is above {{ zone_1_moisture_skip_threshold }}%
@@ -2889,13 +2889,13 @@ action:
         {% endif %}
       z2_should_water: >-
         {{ (zone_2_enabled | bool(false))
-           and (zone_2_valve != '')
+           and (zone_2_valve not in ['', 'sun.sun'])
            and ((z2_interval_due | bool(false)) or (z2_force_water | bool(false)))
            and not (z2_skip_moisture | bool(false)) }}
       z2_result: >-
         {% if not (zone_2_enabled | bool(false)) %}
           ⏭ Disabled
-        {% elif zone_2_valve == '' %}
+        {% elif zone_2_valve in ['', 'sun.sun'] %}
           ⏭ No valve configured
         {% elif z2_skip_moisture | bool(false) %}
           ⏭ Skipped — soil moisture {{ z2_moisture_val | round(0) | int }}% is above {{ zone_2_moisture_skip_threshold }}%
@@ -2963,13 +2963,13 @@ action:
         {% endif %}
       z3_should_water: >-
         {{ (zone_3_enabled | bool(false))
-           and (zone_3_valve != '')
+           and (zone_3_valve not in ['', 'sun.sun'])
            and ((z3_interval_due | bool(false)) or (z3_force_water | bool(false)))
            and not (z3_skip_moisture | bool(false)) }}
       z3_result: >-
         {% if not (zone_3_enabled | bool(false)) %}
           ⏭ Disabled
-        {% elif zone_3_valve == '' %}
+        {% elif zone_3_valve in ['', 'sun.sun'] %}
           ⏭ No valve configured
         {% elif z3_skip_moisture | bool(false) %}
           ⏭ Skipped — soil moisture {{ z3_moisture_val | round(0) | int }}% is above {{ zone_3_moisture_skip_threshold }}%
@@ -3037,13 +3037,13 @@ action:
         {% endif %}
       z4_should_water: >-
         {{ (zone_4_enabled | bool(false))
-           and (zone_4_valve != '')
+           and (zone_4_valve not in ['', 'sun.sun'])
            and ((z4_interval_due | bool(false)) or (z4_force_water | bool(false)))
            and not (z4_skip_moisture | bool(false)) }}
       z4_result: >-
         {% if not (zone_4_enabled | bool(false)) %}
           ⏭ Disabled
-        {% elif zone_4_valve == '' %}
+        {% elif zone_4_valve in ['', 'sun.sun'] %}
           ⏭ No valve configured
         {% elif z4_skip_moisture | bool(false) %}
           ⏭ Skipped — soil moisture {{ z4_moisture_val | round(0) | int }}% is above {{ zone_4_moisture_skip_threshold }}%
@@ -3096,11 +3096,11 @@ action:
                               z1_result: "⚠️ FAILED — valve did not activate ({{ zone_1_valve }})"
                     default:
                       - variables:
-                          _z1_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z1_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z1_duration | int }}"
                       - variables:
-                          _z1_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z1_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_1_valve }}"
@@ -3171,11 +3171,11 @@ action:
                               z2_result: "⚠️ FAILED — valve did not activate ({{ zone_2_valve }})"
                     default:
                       - variables:
-                          _z2_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z2_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z2_duration | int }}"
                       - variables:
-                          _z2_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z2_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_2_valve }}"
@@ -3246,11 +3246,11 @@ action:
                               z3_result: "⚠️ FAILED — valve did not activate ({{ zone_3_valve }})"
                     default:
                       - variables:
-                          _z3_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z3_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z3_duration | int }}"
                       - variables:
-                          _z3_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z3_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_3_valve }}"
@@ -3321,11 +3321,11 @@ action:
                               z4_result: "⚠️ FAILED — valve did not activate ({{ zone_4_valve }})"
                     default:
                       - variables:
-                          _z4_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z4_multiplier_start: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - delay:
                           minutes: "{{ z4_duration | int }}"
                       - variables:
-                          _z4_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve != '' and states(zone_1_valve) in ['on','open']), (zone_2_valve != '' and states(zone_2_valve) in ['on','open']), (zone_3_valve != '' and states(zone_3_valve) in ['on','open']), (zone_4_valve != '' and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
+                          _z4_multiplier_end: "{{ {1: 1.00, 2: 0.84, 3: 0.70, 4: 0.62}.get([(zone_1_valve not in ['', 'sun.sun'] and states(zone_1_valve) in ['on','open']), (zone_2_valve not in ['', 'sun.sun'] and states(zone_2_valve) in ['on','open']), (zone_3_valve not in ['', 'sun.sun'] and states(zone_3_valve) in ['on','open']), (zone_4_valve not in ['', 'sun.sun'] and states(zone_4_valve) in ['on','open'])] | select('equalto', true) | list | count, 1.00) }}"
                       - service: homeassistant.turn_off
                         target:
                           entity_id: "{{ zone_4_valve }}"

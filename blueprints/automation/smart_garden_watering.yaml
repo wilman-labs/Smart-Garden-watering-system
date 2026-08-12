@@ -943,15 +943,12 @@ blueprint:
           selector:
             boolean: {}
 
-# ── Trigger Variables ─────────────────────────────────────────────────
-# These are needed so trigger templates can reference blueprint inputs.
+# ── Trigger ──────────────────────────────────────────────────────────
 trigger_variables:
   zone_1_valve: !input zone_1_valve
   zone_2_valve: !input zone_2_valve
   zone_3_valve: !input zone_3_valve
   zone_4_valve: !input zone_4_valve
-
-# ── Trigger ──────────────────────────────────────────────────────────
 trigger:
   - platform: sun
     event: sunrise
@@ -965,21 +962,55 @@ trigger:
     offset: "-02:30:00"
     id: reduced_morning
   # Manual valve closure triggers (for water usage tracking)
-  # Only trigger if the valve entity is configured (non-empty).
-  # Also fires on 'closing' so that open→closing→closed valves capture
-  # the full open duration rather than the brief closing interval.
-  - platform: template
-    value_template: "{{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closing', 'closed'] }}"
+  # Uses state triggers instead of template triggers to avoid false fires.
+  # State triggers ONLY fire on actual state transitions (e.g. on→off),
+  # never on HA restart re-evaluation or delayed template recalculation.
+  # The 'not_from' filter prevents firing when valves transition from
+  # unavailable/unknown (e.g. HA restart, Zigbee reconnection).
+  - platform: state
+    entity_id: !input zone_1_valve
+    to:
+      - "off"
+      - "closed"
+      - "closing"
+    not_from:
+      - "unknown"
+      - "unavailable"
     id: manual_zone_1
-  - platform: template
-    value_template: "{{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closing', 'closed'] }}"
+    enabled: "{{ zone_1_valve != '' }}"
+  - platform: state
+    entity_id: !input zone_2_valve
+    to:
+      - "off"
+      - "closed"
+      - "closing"
+    not_from:
+      - "unknown"
+      - "unavailable"
     id: manual_zone_2
-  - platform: template
-    value_template: "{{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closing', 'closed'] }}"
+    enabled: "{{ zone_2_valve != '' }}"
+  - platform: state
+    entity_id: !input zone_3_valve
+    to:
+      - "off"
+      - "closed"
+      - "closing"
+    not_from:
+      - "unknown"
+      - "unavailable"
     id: manual_zone_3
-  - platform: template
-    value_template: "{{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closing', 'closed'] }}"
+    enabled: "{{ zone_3_valve != '' }}"
+  - platform: state
+    entity_id: !input zone_4_valve
+    to:
+      - "off"
+      - "closed"
+      - "closing"
+    not_from:
+      - "unknown"
+      - "unavailable"
     id: manual_zone_4
+    enabled: "{{ zone_4_valve != '' }}"
 
 # Run one instance at a time; manual valve triggers during a running cycle
 # are silently dropped (the scheduled cycle already tracks its own litres).
@@ -1088,17 +1119,22 @@ action:
     then:
       # Only process if manual tracking is enabled and this isn't
       # a valve closure that was part of a scheduled cycle (single mode
-      # means scheduled closure triggers are dropped while a cycle runs)
+      # means scheduled closure triggers are dropped while a cycle runs).
+      # State triggers guarantee a valid from_state with last_changed, so
+      # duration calculation is always reliable.
       - condition: template
         value_template: "{{ track_manual_watering }}"
+      # Guard: the valve must have been in an active (open) state before closing.
+      # This filters out transitions like closed→off or closing→closed where
+      # no actual watering occurred — only on/open/opening→off matters.
+      - condition: template
+        value_template: >-
+          {{ trigger.from_state is defined and
+             trigger.from_state.state in ['on', 'open', 'opening'] }}
       - variables:
           _mz_zone: "{{ _trigger_id.replace('manual_zone_', '') | int }}"
           _mz_duration_min: >-
-            {%- if trigger.from_state.state in ['on', 'open', 'opening'] -%}
-              {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
-            {%- else -%}
-              0
-            {%- endif -%}
+            {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
           _mz_flow: >-
             {{ flow_rate | float(5.0) }}
           _mz_multiplier: >-

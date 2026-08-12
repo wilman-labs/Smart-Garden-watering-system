@@ -977,7 +977,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_1
-    enabled: "{{ zone_1_valve != '' }}"
+    enabled: "{{ zone_1_valve not in ['', none] }}"
   - platform: state
     entity_id: "{{ zone_2_valve if zone_2_valve else 'sun.sun' }}"
     to:
@@ -988,7 +988,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_2
-    enabled: "{{ zone_2_valve != '' }}"
+    enabled: "{{ zone_2_valve not in ['', none] }}"
   - platform: state
     entity_id: "{{ zone_3_valve if zone_3_valve else 'sun.sun' }}"
     to:
@@ -999,7 +999,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_3
-    enabled: "{{ zone_3_valve != '' }}"
+    enabled: "{{ zone_3_valve not in ['', none] }}"
   - platform: state
     entity_id: "{{ zone_4_valve if zone_4_valve else 'sun.sun' }}"
     to:
@@ -1010,7 +1010,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_4
-    enabled: "{{ zone_4_valve != '' }}"
+    enabled: "{{ zone_4_valve not in ['', none] }}"
 
 # Run one instance at a time; manual valve triggers during a running cycle
 # are silently dropped (the scheduled cycle already tracks its own litres).

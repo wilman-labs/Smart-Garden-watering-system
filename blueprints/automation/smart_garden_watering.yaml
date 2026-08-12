@@ -944,6 +944,11 @@ blueprint:
             boolean: {}
 
 # ── Trigger ──────────────────────────────────────────────────────────
+trigger_variables:
+  zone_1_valve: !input zone_1_valve
+  zone_2_valve: !input zone_2_valve
+  zone_3_valve: !input zone_3_valve
+  zone_4_valve: !input zone_4_valve
 trigger:
   - platform: sun
     event: sunrise
@@ -972,6 +977,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_1
+    enabled: "{{ zone_1_valve != '' }}"
   - platform: state
     entity_id: !input zone_2_valve
     to:
@@ -982,6 +988,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_2
+    enabled: "{{ zone_2_valve != '' }}"
   - platform: state
     entity_id: !input zone_3_valve
     to:
@@ -992,6 +999,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_3
+    enabled: "{{ zone_3_valve != '' }}"
   - platform: state
     entity_id: !input zone_4_valve
     to:
@@ -1002,6 +1010,7 @@ trigger:
       - "unknown"
       - "unavailable"
     id: manual_zone_4
+    enabled: "{{ zone_4_valve != '' }}"
 
 # Run one instance at a time; manual valve triggers during a running cycle
 # are silently dropped (the scheduled cycle already tracks its own litres).

@@ -965,20 +965,33 @@ trigger:
     offset: "-02:30:00"
     id: reduced_morning
   # Manual valve closure triggers (for water usage tracking)
-  # Only trigger if the valve entity is configured (non-empty).
-  # Also fires on 'closing' so that open→closing→closed valves capture
-  # the full open duration rather than the brief closing interval.
+  # Only trigger if the valve entity is configured (non-empty) AND the
+  # previous state was a genuine open state (not unavailable/unknown).
+  # The 'for' debounce prevents spurious fires during HA restart, entity
+  # reloads, and brief transient states.
   - platform: template
-    value_template: "{{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closing', 'closed'] }}"
+    value_template: >-
+      {{ zone_1_valve != '' and states(zone_1_valve) in ['off', 'closing', 'closed']
+         and state_attr(zone_1_valve, 'last_changed') is not none }}
+    for: "00:00:03"
     id: manual_zone_1
   - platform: template
-    value_template: "{{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closing', 'closed'] }}"
+    value_template: >-
+      {{ zone_2_valve != '' and states(zone_2_valve) in ['off', 'closing', 'closed']
+         and state_attr(zone_2_valve, 'last_changed') is not none }}
+    for: "00:00:03"
     id: manual_zone_2
   - platform: template
-    value_template: "{{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closing', 'closed'] }}"
+    value_template: >-
+      {{ zone_3_valve != '' and states(zone_3_valve) in ['off', 'closing', 'closed']
+         and state_attr(zone_3_valve, 'last_changed') is not none }}
+    for: "00:00:03"
     id: manual_zone_3
   - platform: template
-    value_template: "{{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closing', 'closed'] }}"
+    value_template: >-
+      {{ zone_4_valve != '' and states(zone_4_valve) in ['off', 'closing', 'closed']
+         and state_attr(zone_4_valve, 'last_changed') is not none }}
+    for: "00:00:03"
     id: manual_zone_4
 
 # Run one instance at a time; manual valve triggers during a running cycle
@@ -1091,10 +1104,17 @@ action:
       # means scheduled closure triggers are dropped while a cycle runs)
       - condition: template
         value_template: "{{ track_manual_watering }}"
+      # Guard: skip if the automation was triggered by a scheduled cycle
+      # within the last 120 seconds — prevents re-firing immediately after
+      # a morning/evening/reduced cycle completes and valves close.
+      - condition: template
+        value_template: >-
+          {{ (as_timestamp(now()) - as_timestamp(this.attributes.last_triggered | default(0))) > 120 }}
       - variables:
           _mz_zone: "{{ _trigger_id.replace('manual_zone_', '') | int }}"
           _mz_duration_min: >-
-            {%- if trigger.from_state.state in ['on', 'open', 'opening'] -%}
+            {%- if trigger.from_state is defined and
+                   trigger.from_state.state in ['on', 'open', 'opening'] -%}
               {{ (as_timestamp(now()) - as_timestamp(trigger.from_state.last_changed)) / 60 }}
             {%- else -%}
               0
